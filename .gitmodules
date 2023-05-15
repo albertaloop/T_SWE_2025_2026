@@ -1,3 +1,6 @@
 [submodule "GUI"]
 	path = GUI
 	url = https://github.com/albertaloop/GUI
+[submodule "StateMachine"]
+	path = StateMachine
+	url = https://github.com/albertaloop/StateMachine
