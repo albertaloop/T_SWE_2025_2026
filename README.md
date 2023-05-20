@@ -2,7 +2,7 @@
 
 This repository references three submodules GUI, Firmware, and Albertaloop-2023-Website. These submodules contain all of the software for Albertaloop during the 2023-2024 school year. The submodules must be updated on a regular basis so this repository will link to the most recent commit.
 
-Instructions for using submodules: https://git-scm.com/book/en/v2/Git-Tools-Submodules
+Instructions for using submodules: https://git-scm.com/book/en/v2/Git-Tools-Submodules </br>
 Documentation for git: https://git-scm.com/docs
 
 
