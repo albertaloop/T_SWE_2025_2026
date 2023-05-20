@@ -6,3 +6,7 @@
 	path = Firmware
 	branch = main
 	url = https://github.com/albertaloop/Firmware
+[submodule "Albertaloop-2023-Website"]
+	path = Albertaloop-2023-Website
+	branch = main
+	url = https://github.com/albertaloop/Albertaloop-2023-Website.git
