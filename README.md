@@ -20,6 +20,8 @@ git submodule update --recursive --remote
 git clone --recurse-submodules https://github.com/albertaloop/T_SWE_2023_2024.git
 ```
 
+To pull the changes from the main branch of a submodule, the line "branch = main" must be included in the submodule entry in .gitmodules.
+
 
 # Adding a new submodule
 
