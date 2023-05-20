@@ -2,3 +2,7 @@
 	path = GUI
 	branch = main
 	url = https://github.com/albertaloop/GUI
+[submodule "Firmware"]
+	path = Firmware
+	branch = main
+	url = https://github.com/albertaloop/Firmware
