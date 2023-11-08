@@ -5,8 +5,8 @@
 
 import socket
 
-HOST = "127.0.0.1"
-PORT = 65432
+HOST = "192.168.1.8"    # IP to connect to
+PORT = 65432            # Port to connect to
 
 # Create socket
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
