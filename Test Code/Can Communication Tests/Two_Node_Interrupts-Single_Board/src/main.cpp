@@ -1,4 +1,12 @@
+/*
+  This program will set up two CAN interfaces. One will be used to recieve messages and the other will be used to transmit messages.
+  The recieve interface will be set up to use a FIFO buffer and will call a function when a message is recieved.
+  The transmit interface will be used to send a message every second.
+  The message sent will have a random ID and data.
+  Interrupts are used to tell the FIFO buffer to call the function when a message is recieved.
+*/
 
+// See this chat for more information on the CAN interface and mailboxes
 // https://chat.openai.com/share/3e517cd8-5c45-46d2-beae-4fc47398b9a4
 
 #include <Arduino.h>
@@ -32,8 +40,6 @@ void setup() {
   Can0.begin();
   Can0.setBaudRate(500000);
 
-  Can0.
-
   // Enables the use of a FIFO buffer
   Can0.enableFIFO();
   // Enables interrupts on the FIFO buffer
@@ -45,6 +51,7 @@ void setup() {
   can2.begin();
   can2.setBaudRate(500000);
 
+  // Start the serial monitor before the mailbox status is printed
   delay(5000);
   
   // Prints out some information on the mailboxes
@@ -55,13 +62,13 @@ void loop() {
   // Checks for any CAN events
   Can0.events();
 
-
   // Randomizes the ID and data of the message
   CAN_message_t msg;
   msg.id = random(0x1,0x7FE);
   for ( uint8_t i = 0; i < 8; i++ ) msg.buf[i] = i + 1;
   can2.write(msg);
 
+  // Waits a second before sending another message
   delay(1000);
 }
 
