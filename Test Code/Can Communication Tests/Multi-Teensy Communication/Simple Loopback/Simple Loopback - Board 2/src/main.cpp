@@ -8,7 +8,7 @@
 #include <FlexCAN_T4.h>
 
 // Instantiate the CAN interface at CAN1
-FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> Can0;
+FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> Can0;
 CAN_message_t msg;
 
 // Function called when a message is recieved
@@ -46,6 +46,6 @@ void loop() {
   // Checks for any CAN events
   Can0.events();
 
-  Serial.println("Testing");
+  Serial.println("Testing Receive");
   delay(100);
 }
