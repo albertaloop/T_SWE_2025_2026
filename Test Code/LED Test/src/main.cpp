@@ -16,11 +16,12 @@ CRGB leds[NUM_LEDS];
 int state = 0;  // normal state plays albertaloop colors, state 1 is emergency stopped
 
 // The CAN interface
-FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> can;
+FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> can;
+CAN_message_t msg;
 
 void SetRelayState(const CAN_message_t& msg) {
     // Print out the recieved message
-    Serial.print("Received: ");
+    Serial.println("Received: ");
     for (int i = 0; i < msg.len; i++) {
         Serial.print(msg.buf[i], HEX);
         Serial.print(" ");
@@ -55,7 +56,7 @@ void setup(void) {
 
     // Start the CAN interface
     can.begin();
-    can.setBaudRate(500000);  // 500 kbps
+    can.setBaudRate(250000);  // 500 kbps
 
     // Set all mailboxes to reject all messages
     can.setMBFilter(REJECT_ALL);
@@ -64,7 +65,7 @@ void setup(void) {
     can.enableMBInterrupts();
 
     // Set mailbox zero to recieve only messages with ID 0x123
-    can.setMBFilter(MB0, 0x4FF);
+    can.setMBFilter(MB0, 0x5FF);
     // Can0.setMBUserFilter(MB0, 0x123, 0x7FF); // Last parameter is the mask. This is ANDed with the ID to determine if the message is accepted
 
     // Set the function to run when a message is recieved
@@ -77,6 +78,8 @@ void setup(void) {
 void loop(void) {
     // Check for events
     can.events();
+    // Serial.println("Checking for messages");
+
     if (state == 0) {
         // Set the LED to AlbertaLoop Colors
         for (int i = 0; i < NUM_LEDS; i++) {
@@ -92,7 +95,6 @@ void loop(void) {
         }
 
         FastLED.show();
-        delay(250);
 
     } else if (state == 1) {
         // Emergency stop
@@ -100,6 +102,8 @@ void loop(void) {
             leds[i] = CRGB(0, 255, 0);  // Set RGB values to red
         }
         FastLED.show();
-        delay(5000);
+        
     }
+
+    delay(100);
 }

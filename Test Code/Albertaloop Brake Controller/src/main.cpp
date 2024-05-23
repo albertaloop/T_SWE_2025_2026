@@ -17,11 +17,12 @@ unsigned long timeout = 50;  // 50 ms timeout
 bool message_received = false;
 
 // The CAN interface
-FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> can;
+FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> can;
+CAN_message_t msg;
 
 void SetRelayState(const CAN_message_t& msg) {
     // Print out the recieved message
-    Serial.print("Received: ");
+    Serial.println("Received: ");
     for (int i = 0; i < msg.len; i++) {
         Serial.print(msg.buf[i], HEX);
         Serial.print(" ");
@@ -59,7 +60,7 @@ void SetRelayState(const CAN_message_t& msg) {
 void setup(void) {
     // Start the serial terminal
     Serial.begin(115200);
-    Serial.println("Welcome to Motor Control!");
+    Serial.println("Welcome to Brake Control!");
 
     // Set the reverse pin to output
     pinMode(brakesPin, OUTPUT);
@@ -72,7 +73,7 @@ void setup(void) {
 
     // Start the CAN interface
     can.begin();
-    can.setBaudRate(500000);  // 500 kbps
+    can.setBaudRate(250000);  // 500 kbps
 
     // Set all mailboxes to reject all messages
     can.setMBFilter(REJECT_ALL);
@@ -81,7 +82,7 @@ void setup(void) {
     can.enableMBInterrupts();
 
     // Set mailbox zero to recieve only messages with ID 0x123
-    can.setMBFilter(MB0, 0x4FF);
+    can.setMBFilter(MB0, 0x3FF);
     // Can0.setMBUserFilter(MB0, 0x123, 0x7FF); // Last parameter is the mask. This is ANDed with the ID to determine if the message is accepted
 
     // Set the function to run when a message is recieved
@@ -107,16 +108,9 @@ void loop(void) {
     // }
 
     // Timeout reached
-    Serial.println("Timeout reached");
-    digitalWrite(contactorPin, LOW);
-    digitalWrite(brakesPin, LOW);
-    Serial.println("Contactor turned off");
-    delay(500);
-    digitalWrite(contactorPin, HIGH);
-    digitalWrite(brakesPin, HIGH);
-    Serial.println("Contactor turned on");
-    delay(500);
-
+    // Serial.println("Timeout reached");
+    can.events();
+    delay(100);
 
     // if (!message_received && isReleased) {
     //     // Emergency stop

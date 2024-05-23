@@ -23,6 +23,5 @@
         "*.rex": "rexx",
         "*.rexx": "rexx",
         "*.tpp": "cpp"
-    },
-    "cmake.sourceDirectory": "C:/Users/matte/Documents/Albertaloop/Code/T_SWE_2023_2024/Test Code/Alberaloop Motor Controller/.pio/libdeps/teensy41/Adafruit BusIO"
+    }
 }

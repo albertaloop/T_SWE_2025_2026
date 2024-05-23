@@ -2,6 +2,7 @@
 #include <FlexCAN_T4.h>
 #include <Wire.h>
 #include <string>
+#include <Arduino.h>
 
 using namespace std;
 
@@ -19,9 +20,10 @@ unsigned long timeout = 500;  // 50 ms timeout
 bool message_received = false;
 
 // The CAN interface
-FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> can;
+FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> can;
+CAN_message_t msg;
 
-void SetMotorSpeed(const CAN_message_t& msg) {
+void setMotorSpeed(const CAN_message_t& msg)  {
     // Print out the recieved message
     Serial.println("Received: ");
     for (int i = 0; i < msg.len; i++) {
@@ -72,6 +74,10 @@ void setup(void) {
     can.begin();
     can.setBaudRate(250000);  // 500 kbps
 
+    // can.enableFIFO();
+    // Enables interrupts on the FIFO buffer
+    // can.enableFIFOInterrupt();
+
     // Set all mailboxes to reject all messages
     can.setMBFilter(REJECT_ALL);
 
@@ -83,7 +89,7 @@ void setup(void) {
     // Can0.setMBUserFilter(MB0, 0x123, 0x7FF); // Last parameter is the mask. This is ANDed with the ID to determine if the message is accepted
 
     // Set the function to run when a message is recieved
-    can.onReceive(MB0, SetMotorSpeed);
+    can.onReceive(MB0, setMotorSpeed);
 
     // Start the DAC
     // For Adafruit MCP4725A1 the address is 0x62 (default) or 0x63 (ADDR pin tied to VCC)
