@@ -1,29 +1,27 @@
-#include <Adafruit_MCP4725.h>
+
 #include <FlexCAN_T4.h>
 #include <Wire.h>
 #include <string>
 
 using namespace std;
 
-// The DAC for voltage output
-Adafruit_MCP4725 dac;
-
-// The pin for the reverse switch
-const int reversePin = 2;
+// Pin Definitions
+const int contactorPin = 24;
+const int brakesPin = 25;
 
 // The boolean
-bool isMoving = false;
+bool isReleased = false;
 
 // Timeouts
-unsigned long timeout = 500;  // 50 ms timeout
+unsigned long timeout = 50;  // 50 ms timeout
 bool message_received = false;
 
 // The CAN interface
 FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> can;
 
-void SetMotorSpeed(const CAN_message_t& msg) {
+void SetRelayState(const CAN_message_t& msg) {
     // Print out the recieved message
-    Serial.println("Received: ");
+    Serial.print("Received: ");
     for (int i = 0; i < msg.len; i++) {
         Serial.print(msg.buf[i], HEX);
         Serial.print(" ");
@@ -34,23 +32,25 @@ void SetMotorSpeed(const CAN_message_t& msg) {
     uint8_t command = msg.buf[0];
     message_received = true;
 
-    // If the command is 0xC0, set the motor speed to 0
-    if (command == 0xC0) {
-        dac.setVoltage(0, true);
-        isMoving = false;
+    // If the command is 0xA0, turn off contactor and engage brakes
+    if (command == 0xA0) {
+        digitalWrite(contactorPin, HIGH);
+        digitalWrite(brakesPin, HIGH);
+        isReleased = false;
         return;
-    } else if (command == 0xC4) {
-        // If the command is 0x01, set the motor speed to 5V
-        dac.setVoltage(4000, false);
-        isMoving = true;
+    } else if (command == 0xA2) {
+        // If the command is 0xA2, turn on the contactor
+        digitalWrite(contactorPin, LOW);
         return;
-    } else if (command == 0xC6) {
-        // If the command is 0xC6, reverse the motor
-        digitalWrite(reversePin, LOW);
+    } else if (command == 0xA4) {
+        // If the command is 0xC6, disengage brakes
+        digitalWrite(brakesPin, LOW);
+        isReleased = true;
         return;
-    } else if (command == 0xC8) {
-        // If the command is 0xC8, stop reversing the motor
-        digitalWrite(reversePin, HIGH);
+    } else if (command == 0xA6) {
+        // If the command is 0xA6  engage brakes
+        digitalWrite(brakesPin, HIGH);
+        isReleased = false;
         return;
     }
 
@@ -62,15 +62,17 @@ void setup(void) {
     Serial.println("Welcome to Motor Control!");
 
     // Set the reverse pin to output
-    pinMode(reversePin, OUTPUT);
-    digitalWrite(reversePin, HIGH);
+    pinMode(brakesPin, OUTPUT);
+    pinMode(contactorPin, OUTPUT);
+    digitalWrite(brakesPin, HIGH);
+    digitalWrite(contactorPin, HIGH);
 
     // Delay by 5 seconds for startup
     delay(5000);
 
     // Start the CAN interface
     can.begin();
-    can.setBaudRate(250000);  // 500 kbps
+    can.setBaudRate(500000);  // 500 kbps
 
     // Set all mailboxes to reject all messages
     can.setMBFilter(REJECT_ALL);
@@ -83,26 +85,7 @@ void setup(void) {
     // Can0.setMBUserFilter(MB0, 0x123, 0x7FF); // Last parameter is the mask. This is ANDed with the ID to determine if the message is accepted
 
     // Set the function to run when a message is recieved
-    can.onReceive(MB0, SetMotorSpeed);
-
-    // Start the DAC
-    // For Adafruit MCP4725A1 the address is 0x62 (default) or 0x63 (ADDR pin tied to VCC)
-    if (dac.begin(0x62, &Wire)) {
-        Serial.println("DAC Ready!");
-        dac.setVoltage(0, true);
-    } else {
-        Serial.println("DAC unknown error");
-        exit(1);
-
-        // Blink the LED
-        while (1) {
-            digitalWrite(LED_BUILTIN, HIGH);
-            delay(500);
-            digitalWrite(LED_BUILTIN, LOW);
-            delay(500);
-        }
-
-    };
+    can.onReceive(MB0, SetRelayState);
 
     Serial.println("Setup Complete");
 }
@@ -123,12 +106,22 @@ void loop(void) {
     //     }
     // }
 
-    // // Timeout reached
-    // Serial.println("Timeout reached");
+    // Timeout reached
+    Serial.println("Timeout reached");
+    digitalWrite(contactorPin, LOW);
+    digitalWrite(brakesPin, LOW);
+    Serial.println("Contactor turned off");
+    delay(500);
+    digitalWrite(contactorPin, HIGH);
+    digitalWrite(brakesPin, HIGH);
+    Serial.println("Contactor turned on");
+    delay(500);
 
-    // if (!message_received && isMoving) {
+
+    // if (!message_received && isReleased) {
     //     // Emergency stop
-    //     dac.setVoltage(0, true);
+    //     digitalWrite(contactorPin, HIGH);
+    //     digitalWrite(brakesPin, HIGH);
 
     //     // Blink the LED
     //     while (1) {
@@ -138,7 +131,4 @@ void loop(void) {
     //         delay(500);
     //     }
     // }
-
-    can.events();
-    delay(100);
 }
