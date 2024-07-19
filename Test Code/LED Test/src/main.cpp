@@ -58,18 +58,22 @@ void setup(void) {
     can.begin();
     can.setBaudRate(250000);  // 500 kbps
 
+    // can.enableFIFO();
+    // Enables interrupts on the FIFO buffer
+    // can.enableFIFOInterrupt();
+
     // Set all mailboxes to reject all messages
     can.setMBFilter(REJECT_ALL);
 
-    // Enable all mailboxes to be interrupt enabled
+    // // Enable all mailboxes to be interrupt enabled
     can.enableMBInterrupts();
 
-    // Set mailbox zero to recieve only messages with ID 0x123
+    // // Set mailbox zero to recieve only messages with ID 0x123
     can.setMBFilter(MB0, 0x5FF);
     // Can0.setMBUserFilter(MB0, 0x123, 0x7FF); // Last parameter is the mask. This is ANDed with the ID to determine if the message is accepted
 
     // Set the function to run when a message is recieved
-    can.onReceive(MB0, SetRelayState);
+    can.onReceive(SetRelayState);
 
     Serial.println("Setup Complete");
 }
@@ -102,7 +106,7 @@ void loop(void) {
             leds[i] = CRGB(0, 255, 0);  // Set RGB values to red
         }
         FastLED.show();
-        
+
     }
 
     delay(100);

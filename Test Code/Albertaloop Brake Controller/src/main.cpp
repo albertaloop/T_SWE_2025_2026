@@ -16,27 +16,37 @@ bool isReleased = false;
 unsigned long timeout = 50;  // 50 ms timeout
 bool message_received = false;
 
+// The status message
+u_int8_t status = 0;
+
 // The CAN interface
 FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> can;
 CAN_message_t msg;
 
+// The status message to send back (motor state)
+uint8_t status_message[2] = {0xA0, 0xA6};
+
+// Flag for the first message received
+bool first_message_recieved = false;
+
 void SetRelayState(const CAN_message_t& msg) {
     // Print out the recieved message
-    Serial.println("Received: ");
-    for (int i = 0; i < msg.len; i++) {
-        Serial.print(msg.buf[i], HEX);
-        Serial.print(" ");
+    if (msg.buf[0] != 0x33) {
+        Serial.println("Received: ");
+        for (int i = 0; i < msg.len; i++) {
+            Serial.print(msg.buf[i], HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
     }
-    Serial.println();
-    
+
     // Get the first byte of the message data
     uint8_t command = msg.buf[0];
     message_received = true;
 
-    // If the command is 0xA0, turn off contactor and engage brakes
+    // If the command is 0xA0, turn off contactor
     if (command == 0xA0) {
         digitalWrite(contactorPin, HIGH);
-        digitalWrite(brakesPin, HIGH);
         isReleased = false;
         return;
     } else if (command == 0xA2) {
@@ -54,7 +64,6 @@ void SetRelayState(const CAN_message_t& msg) {
         isReleased = false;
         return;
     }
-
 }
 
 void setup(void) {
@@ -93,36 +102,45 @@ void setup(void) {
 
 // Assuming 5V input
 void loop(void) {
-    // unsigned long start_time = millis();
-    // message_received = false;
-    // while (millis() - start_time < timeout) {
-    //     // Check for events
-    //     can.events();
+    unsigned long start_time = millis();
+    message_received = false;
+    while (millis() - start_time < timeout) {
+        // Check for events
+        can.events();
 
-    //     // Check if message received
-    //     if (message_received) {
-    //         message_received = false;
-    //         start_time = millis();
-    //         continue;
-    //     }
-    // }
+        // Check if message received
+        if (message_received) {
+            message_received = false;
+            first_message_recieved = true;
+            start_time = millis();
+
+            // Send the status message
+            msg.id = 0x3FF;
+            msg.len = 2;
+            msg.buf[0] = status_message[0];
+            msg.buf[1] = status_message[1];
+            can.write(msg);
+            continue;
+        }
+    }
 
     // Timeout reached
-    // Serial.println("Timeout reached");
+    Serial.println("Timeout reached");
+
+    if (!message_received && isReleased && first_message_recieved) {
+        // Emergency stop
+        digitalWrite(contactorPin, HIGH);
+        digitalWrite(brakesPin, HIGH);
+
+        // Blink the LED
+        while (1) {
+            digitalWrite(LED_BUILTIN, HIGH);
+            delay(500);
+            digitalWrite(LED_BUILTIN, LOW);
+            delay(500);
+        }
+    }
+
     can.events();
     delay(100);
-
-    // if (!message_received && isReleased) {
-    //     // Emergency stop
-    //     digitalWrite(contactorPin, HIGH);
-    //     digitalWrite(brakesPin, HIGH);
-
-    //     // Blink the LED
-    //     while (1) {
-    //         digitalWrite(LED_BUILTIN, HIGH);
-    //         delay(500);
-    //         digitalWrite(LED_BUILTIN, LOW);
-    //         delay(500);
-    //     }
-    // }
 }

@@ -1,8 +1,8 @@
 #include <Adafruit_MCP4725.h>
+#include <Arduino.h>
 #include <FlexCAN_T4.h>
 #include <Wire.h>
 #include <string>
-#include <Arduino.h>
 
 using namespace std;
 
@@ -23,15 +23,23 @@ bool message_received = false;
 FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> can;
 CAN_message_t msg;
 
-void setMotorSpeed(const CAN_message_t& msg)  {
+// The status message to send back (motor state)
+uint8_t status_message = 0xC0;
+
+// The first message recieved
+bool first_message_recieved = false;
+
+void setMotorSpeed(const CAN_message_t& msg) {
     // Print out the recieved message
-    Serial.println("Received: ");
-    for (int i = 0; i < msg.len; i++) {
-        Serial.print(msg.buf[i], HEX);
-        Serial.print(" ");
+    if (msg.buf[0] != 0x33) {
+        Serial.println("Received: ");
+        for (int i = 0; i < msg.len; i++) {
+            Serial.print(msg.buf[i], HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
     }
-    Serial.println();
-    
+
     // Get the first byte of the message data
     uint8_t command = msg.buf[0];
     message_received = true;
@@ -40,22 +48,24 @@ void setMotorSpeed(const CAN_message_t& msg)  {
     if (command == 0xC0) {
         dac.setVoltage(0, true);
         isMoving = false;
+        status_message = 0xC0;
         return;
     } else if (command == 0xC4) {
         // If the command is 0x01, set the motor speed to 5V
         dac.setVoltage(4000, false);
         isMoving = true;
-        return;
-    } else if (command == 0xC6) {
-        // If the command is 0xC6, reverse the motor
-        digitalWrite(reversePin, LOW);
-        return;
-    } else if (command == 0xC8) {
-        // If the command is 0xC8, stop reversing the motor
-        digitalWrite(reversePin, HIGH);
+        status_message = 0xC4;
         return;
     }
-
+    // else if (command == 0xC6) {
+    //     // If the command is 0xC6, reverse the motor
+    //     digitalWrite(reversePin, LOW);
+    //     return;
+    // } else if (command == 0xC8) {
+    //     // If the command is 0xC8, stop reversing the motor
+    //     digitalWrite(reversePin, HIGH);
+    //     return;
+    // }
 }
 
 void setup(void) {
@@ -107,7 +117,6 @@ void setup(void) {
             digitalWrite(LED_BUILTIN, LOW);
             delay(500);
         }
-
     };
 
     Serial.println("Setup Complete");
@@ -115,36 +124,44 @@ void setup(void) {
 
 // Assuming 5V input
 void loop(void) {
-    // unsigned long start_time = millis();
-    // message_received = false;
-    // while (millis() - start_time < timeout) {
-    //     // Check for events
-    //     can.events();
+    unsigned long start_time = millis();
+    message_received = false;
+    while (millis() - start_time < timeout) {
+        // Check for events
+        can.events();
 
-    //     // Check if message received
-    //     if (message_received) {
-    //         message_received = false;
-    //         start_time = millis();
-    //         continue;
-    //     }
-    // }
+        // Check if message received
+        if (message_received) {
+            message_received = false;
+            first_message_recieved = true;
+            start_time = millis();
 
-    // // Timeout reached
+            // Send the status message
+            msg.id = 0x4FF;
+            msg.len = 1;
+            msg.buf[0] = status_message;
+            can.write(msg);
+
+            continue;
+        }
+    }
+
+    // Timeout reached
     // Serial.println("Timeout reached");
 
-    // if (!message_received && isMoving) {
-    //     // Emergency stop
-    //     dac.setVoltage(0, true);
+    if (!message_received && isMoving && first_message_recieved) {
+        // Emergency stop
+        dac.setVoltage(0, true);
 
-    //     // Blink the LED
-    //     while (1) {
-    //         digitalWrite(LED_BUILTIN, HIGH);
-    //         delay(500);
-    //         digitalWrite(LED_BUILTIN, LOW);
-    //         delay(500);
-    //     }
-    // }
+        // Blink the LED
+        while (1) {
+            digitalWrite(LED_BUILTIN, HIGH);
+            delay(500);
+            digitalWrite(LED_BUILTIN, LOW);
+            delay(500);
+        }
+    }
 
-    can.events();
-    delay(100);
+    // can.events();
+    // delay(100);
 }
