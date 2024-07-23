@@ -102,45 +102,10 @@ void setup(void) {
 
 // Assuming 5V input
 void loop(void) {
-    unsigned long start_time = millis();
-    message_received = false;
-    while (millis() - start_time < timeout) {
-        // Check for events
-        can.events();
-
-        // Check if message received
-        if (message_received) {
-            message_received = false;
-            first_message_recieved = true;
-            start_time = millis();
-
-            // Send the status message
-            msg.id = 0x3FF;
-            msg.len = 2;
-            msg.buf[0] = status_message[0];
-            msg.buf[1] = status_message[1];
-            can.write(msg);
-            continue;
-        }
-    }
-
-    // Timeout reached
-    Serial.println("Timeout reached");
-
-    if (!message_received && isReleased && first_message_recieved) {
-        // Emergency stop
-        digitalWrite(contactorPin, HIGH);
-        digitalWrite(brakesPin, HIGH);
-
-        // Blink the LED
-        while (1) {
-            digitalWrite(LED_BUILTIN, HIGH);
-            delay(500);
-            digitalWrite(LED_BUILTIN, LOW);
-            delay(500);
-        }
-    }
-
+    
+    // If the message has been recieved
     can.events();
     delay(100);
+
+    // Serial.println("Looping");
 }

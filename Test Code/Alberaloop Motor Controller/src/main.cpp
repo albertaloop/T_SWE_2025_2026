@@ -13,11 +13,8 @@ Adafruit_MCP4725 dac;
 const int reversePin = 2;
 
 // The boolean
-bool isMoving = false;
-
-// Timeouts
-unsigned long timeout = 500;  // 50 ms timeout
-bool message_received = false;
+bool isEnabled = false;
+bool currentDir = true;
 
 // The CAN interface
 FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> can;
@@ -42,30 +39,29 @@ void setMotorSpeed(const CAN_message_t& msg) {
 
     // Get the first byte of the message data
     uint8_t command = msg.buf[0];
-    message_received = true;
 
     // If the command is 0xC0, set the motor speed to 0
     if (command == 0xC0) {
         dac.setVoltage(0, true);
-        isMoving = false;
+        isEnabled = false;
         status_message = 0xC0;
         return;
     } else if (command == 0xC4) {
         // If the command is 0x01, set the motor speed to 5V
         dac.setVoltage(4000, false);
-        isMoving = true;
+        isEnabled = true;
         status_message = 0xC4;
         return;
     }
-    // else if (command == 0xC6) {
-    //     // If the command is 0xC6, reverse the motor
-    //     digitalWrite(reversePin, LOW);
-    //     return;
-    // } else if (command == 0xC8) {
-    //     // If the command is 0xC8, stop reversing the motor
-    //     digitalWrite(reversePin, HIGH);
-    //     return;
-    // }
+    else if (command == 0xC6) {
+        // If the command is 0xC6, reverse the motor
+        digitalWrite(reversePin, LOW);
+        return;
+    } else if (command == 0xC8) {
+        // If the command is 0xC8, stop reversing the motor
+        digitalWrite(reversePin, HIGH);
+        return;
+    }
 }
 
 void setup(void) {
@@ -108,7 +104,6 @@ void setup(void) {
         dac.setVoltage(0, true);
     } else {
         Serial.println("DAC unknown error");
-        exit(1);
 
         // Blink the LED
         while (1) {
@@ -119,49 +114,44 @@ void setup(void) {
         }
     };
 
+    isEnabled = false;
+    currentDir = true;
+
     Serial.println("Setup Complete");
 }
 
 // Assuming 5V input
 void loop(void) {
-    unsigned long start_time = millis();
-    message_received = false;
-    while (millis() - start_time < timeout) {
-        // Check for events
-        can.events();
 
-        // Check if message received
-        if (message_received) {
-            message_received = false;
-            first_message_recieved = true;
-            start_time = millis();
 
-            // Send the status message
-            msg.id = 0x4FF;
-            msg.len = 1;
-            msg.buf[0] = status_message;
-            can.write(msg);
+    // Check for CAN events
+    can.events();
 
-            continue;
-        }
-    }
-
-    // Timeout reached
-    // Serial.println("Timeout reached");
-
-    if (!message_received && isMoving && first_message_recieved) {
-        // Emergency stop
+    // If the system is enabled, move back and forth slowly
+    if (isEnabled) {
+        // Move the motor back and forth
+        Serial.println("Moving forward");
         dac.setVoltage(0, true);
+        delay(1000);
 
-        // Blink the LED
-        while (1) {
-            digitalWrite(LED_BUILTIN, HIGH);
-            delay(500);
-            digitalWrite(LED_BUILTIN, LOW);
-            delay(500);
+        // Move the motor back and forth
+        Serial.println("Moving Backward");
+        dac.setVoltage(4000, false);
+
+        delay(1000);
+
+        // Reverse the motor
+        if (currentDir) {
+            digitalWrite(reversePin, LOW);
+            currentDir = false;
+        } else {
+            digitalWrite(reversePin, HIGH);
+            currentDir = true;
         }
+
+    } else {
+        // If the system is not enabled, stop the motor
+        dac.setVoltage(0, true);
     }
 
-    // can.events();
-    // delay(100);
 }
