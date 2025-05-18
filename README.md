@@ -1,4 +1,4 @@
-# T_SWE_2024_2025
+# T_SWE_2025_2026
 ### NEEDS TO BE UPDATED
 
 This repository references three submodules GUI, Firmware, and Albertaloop-2023-Website. These submodules contain all of the software for Albertaloop during the 2023-2024 school year. The submodules must be updated on a regular basis so this repository will link to the most recent commit.
