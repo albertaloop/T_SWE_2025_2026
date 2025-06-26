@@ -1,0 +1,16 @@
+../Core/Src/main_app.c:35:5:main	8	static
+../Core/Src/main_app.c:66:6:SystemClock_Config_HSE	96	static
+../Core/Src/main_app.c:153:6:CAN1_Tx	40	static
+../Core/Src/main_app.c:183:6:CAN_Filter_Config	48	static
+../Core/Src/main_app.c:208:6:GPIO_Init	40	static
+../Core/Src/main_app.c:247:6:TIMER6_Init	8	static
+../Core/Src/main_app.c:263:6:UART2_Init	8	static
+../Core/Src/main_app.c:284:6:CAN1_Init	8	static
+../Core/Src/main_app.c:320:6:HAL_CAN_TxMailbox0CompleteCallback	72	static
+../Core/Src/main_app.c:333:6:HAL_CAN_TxMailbox1CompleteCallback	72	static
+../Core/Src/main_app.c:346:6:HAL_CAN_TxMailbox2CompleteCallback	72	static
+../Core/Src/main_app.c:359:6:HAL_CAN_RxFifo0MsgPendingCallback	80	static
+../Core/Src/main_app.c:397:6:HAL_TIM_PeriodElapsedCallback	48	static
+../Core/Src/main_app.c:426:6:LED_Manage_Output	16	static
+../Core/Src/main_app.c:457:6:Send_response	48	static
+../Core/Src/main_app.c:481:6:Error_handler	4	static

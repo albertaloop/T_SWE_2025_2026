@@ -33,9 +33,8 @@ int main(void)
   GPIO_Init();
   UART2_Init();
   CAN1_Init();
-  CAN_Filter_Config();
+  CAN_Filter_Config(); // DEFINE IT BEFORE calling CAN
 
-  // move CAN to normal mode from init
   if( HAL_CAN_Start(&hcan1) != HAL_OK)
   {
     Error_handler();
@@ -148,9 +147,9 @@ void CAN1_Tx(void)
   // mailbox
   uint32_t TxMailbox;
   // ptr to msg
-  uint8_t our_message[11] = {'A','L','B','E','R','T','A','L','O','O','P'};
+  uint8_t our_message[11] = {'A','L','O','O','P'};
   // size of message
-  TxHeader.DLC = 11;
+  TxHeader.DLC = 5; //  Max_Data = 8 Bytes
   // ID for the msg
   TxHeader.StdId = 0x65D;
   // ID can be std / ext based on use case
@@ -176,13 +175,14 @@ void CAN1_Tx(void)
 void CAN1_Rx(void)
 {
   CAN_RxHeaderTypeDef RxHeader;
-  uint8_t rcvd_msg[5];
+  uint8_t rcvd_msg[5]; // buffer to save data
 
   char msg[50];
 
-  //we are waiting for at least one message in to the RX FIFO0
-  while(! HAL_CAN_GetRxFifoFillLevel(&hcan1,CAN_RX_FIFO0));
+  //we are waiting for at least one message (non zero) in to the RX FIFO0
+  while(! HAL_CAN_GetRxFifoFillLevel(&hcan1,CAN_RX_FIFO0)); // returns the fill level of the fifo
 
+  // this will bring the message from fifo into memory RAM
   if(HAL_CAN_GetRxMessage(&hcan1,CAN_RX_FIFO0,&RxHeader,rcvd_msg) != HAL_OK)
   {
     Error_handler();
@@ -201,14 +201,16 @@ void CAN_Filter_Config(void)
   CAN_FilterTypeDef can1_filter_init;
 
   can1_filter_init.FilterActivation = ENABLE;
-  can1_filter_init.FilterBank  = 0;
-  can1_filter_init.FilterFIFOAssignment = CAN_RX_FIFO0;
+  can1_filter_init.FilterBank  = 0; // 14 dedicated filter banks can pick 0 - 13
+  can1_filter_init.FilterFIFOAssignment = CAN_RX_FIFO0; //fifo0 or fifo1U
+  //specify what the bits should be (0/1) for the ones defined in the mask
   can1_filter_init.FilterIdHigh = 0x0000;
   can1_filter_init.FilterIdLow = 0x0000;
+  //specify the bits you want to be checked in the mask
   can1_filter_init.FilterMaskIdHigh = 0x0000;
   can1_filter_init.FilterMaskIdLow = 0x0000;
-  can1_filter_init.FilterMode = CAN_FILTERMODE_IDMASK;
-  can1_filter_init.FilterScale = CAN_FILTERSCALE_32BIT;
+  can1_filter_init.FilterMode = CAN_FILTERMODE_IDMASK;  // or CAN_FILTERMODE_IDLIST
+  can1_filter_init.FilterScale = CAN_FILTERSCALE_32BIT; // can select 16 bit to optimize further but not necessary
 
   if( HAL_CAN_ConfigFilter(&hcan1,&can1_filter_init) != HAL_OK)
   {
@@ -261,7 +263,7 @@ void CAN1_Init(void)
 {
   hcan1.Instance = CAN1;
   hcan1.Init.Mode = CAN_MODE_LOOPBACK;
-  hcan1.Init.AutoBusOff = ENABLE;
+  hcan1.Init.AutoBusOff = ENABLE; // ABOM - auto bus off management - automatic recovery after node goes down
   hcan1.Init.AutoRetransmission = ENABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
