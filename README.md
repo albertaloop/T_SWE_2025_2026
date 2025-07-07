@@ -9,6 +9,8 @@ Modules:
 
 3. Firmwares/ contains the codes to the nucleo boards subsystems: LED controller, Motor controller, and Braking module.  
 
+![fsm image](assets/fsm.jpg)
+
 Branches info:
 Branch CANdrivers contains the following drivers:
 - Loopback
