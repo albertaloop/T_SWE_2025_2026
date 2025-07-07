@@ -1,5 +1,0 @@
-[submodule "GUI"]
-	path = GUI
-	branch = main
-	url = https://github.com/albertaloop/GUI
-
