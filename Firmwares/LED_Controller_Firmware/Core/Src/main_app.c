@@ -23,7 +23,7 @@ void CAN1_Rx(void);
 void CAN_Filter_Config(void);
 void TIMER6_Init(void);
 void Send_response(uint32_t StdId);
-void LED_Manage_Output(uint8_t led_no);
+void LED_Manage_Output();
 
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart2;
@@ -37,7 +37,7 @@ CAN_RxHeaderTypeDef RxHeader;
 int main(void)
 {
   HAL_Init();
-  SystemClock_Config_HSE(SYS_CLOCK_FREQ_84_MHZ);
+  SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ);
   GPIO_Init();
   UART2_Init();
   TIMER6_Init();
@@ -189,9 +189,15 @@ void CAN_Filter_Config(void)
   can1_filter_init.FilterActivation = ENABLE;
   can1_filter_init.FilterBank  = 0;
   can1_filter_init.FilterFIFOAssignment = CAN_RX_FIFO0;
-  can1_filter_init.FilterIdHigh = 0x0000;
+  // CANid total bits 11
+  // xxx xxxx xxxx
+  // 100 xxxx xxxx
+  // Accept only 4XX
+  // id 1000 = 0x8
+  // mask 1110 = 0xE
+  can1_filter_init.FilterIdHigh = 0x8000;
   can1_filter_init.FilterIdLow = 0x0000;
-  can1_filter_init.FilterMaskIdHigh = 0X01C0;
+  can1_filter_init.FilterMaskIdHigh = 0XE000;
   can1_filter_init.FilterMaskIdLow = 0x0000;
   can1_filter_init.FilterMode = CAN_FILTERMODE_IDMASK;
   can1_filter_init.FilterScale = CAN_FILTERSCALE_32BIT;
@@ -254,10 +260,13 @@ void TIMER6_Init(void)
 { // APB clock1 84 MHz
   // CNT_CLK = TIMx_CLK / (prescaler+1)
   htimer6.Instance = TIM6;
-//  htimer6.Init.Prescaler = 4999;
-//  htimer6.Init.Period = 10000-1;
-  htimer6.Init.Prescaler = 13124;  // 13125 - 1
-  htimer6.Init.Period = 31999;     // 32000 - 1
+  //  Every one second:
+  //  htimer6.Init.Prescaler = 4999;
+  //  htimer6.Init.Period = 10000-1;
+
+  // Every 5 seconds:
+  htimer6.Init.Prescaler = 49999;  // Divides 50MHz to 1kHz
+  htimer6.Init.Period = 4999;      // 1kHz → 5s interrupt
   if( HAL_TIM_Base_Init(&htimer6) != HAL_OK )
   {
     Error_handler();
@@ -301,15 +310,15 @@ void CAN1_Init(void)
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.TransmitFifoPriority = DISABLE;
 
-  //Settings related to CAN bit timings
-//  hcan1.Init.Prescaler = 3;
-//  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-//  hcan1.Init.TimeSeg1 = CAN_BS1_11TQ;
-//  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
+  //  Settings related to CAN bit timings
+  //  hcan1.Init.Prescaler = 3;
+  //  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  //  hcan1.Init.TimeSeg1 = CAN_BS1_11TQ;
+  //  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
 
-  //Settings related to CAN bit timings
-  // Setting resulting bit rate to 250k as per DALY BMS reqs
-  // The prescalar, time values were derived from
+  //  Settings related to CAN bit timings
+  //  Setting resulting bit rate to 250k as per DALY BMS reqs
+  //  The prescalar, time values were derived from http://www.bittiming.can-wiki.info/
   hcan1.Init.Prescaler = 10;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_8TQ;
@@ -426,7 +435,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     sprintf(msg,"0x406 BRAKING state INITIALIZED : #%x\r\n",rcvd_msg[0]);
     }
 
-  else if ( RxHeader.StdId == 0x407 && && RxHeader.RTR == 0)
+  else if ( RxHeader.StdId == 0x407 && RxHeader.RTR == 0)
     { // DEBUG sate
 
     fsm_state = 6;

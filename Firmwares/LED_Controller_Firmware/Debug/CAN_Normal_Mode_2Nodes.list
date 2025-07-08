@@ -1,5 +1,5 @@
 
-LED_Controller_Firmware.elf:     file format elf32-littlearm
+TEST_LED.elf:     file format elf32-littlearm
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
