@@ -44,6 +44,8 @@ int main(void)
   CAN1_Init();
   CAN_Filter_Config();
 
+//  CAN1_Tx();
+
   if(HAL_CAN_ActivateNotification(&hcan1,CAN_IT_TX_MAILBOX_EMPTY|CAN_IT_RX_FIFO0_MSG_PENDING|CAN_IT_BUSOFF)!= HAL_OK)
   {
     Error_handler();
@@ -186,7 +188,7 @@ void CAN_Filter_Config(void)
 {
   CAN_FilterTypeDef can1_filter_init;
 
-  can1_filter_init.FilterActivation = ENABLE;
+  can1_filter_init.FilterActivation = DISABLE;
   can1_filter_init.FilterBank  = 0;
   can1_filter_init.FilterFIFOAssignment = CAN_RX_FIFO0;
   // CANid total bits 11
@@ -195,9 +197,9 @@ void CAN_Filter_Config(void)
   // Accept only 4XX
   // id 1000 = 0x8
   // mask 1110 = 0xE
-  can1_filter_init.FilterIdHigh = 0x8000;
+  can1_filter_init.FilterIdHigh = 0x0000;
   can1_filter_init.FilterIdLow = 0x0000;
-  can1_filter_init.FilterMaskIdHigh = 0XE000;
+  can1_filter_init.FilterMaskIdHigh = 0X0000;
   can1_filter_init.FilterMaskIdLow = 0x0000;
   can1_filter_init.FilterMode = CAN_FILTERMODE_IDMASK;
   can1_filter_init.FilterScale = CAN_FILTERSCALE_32BIT;
@@ -377,6 +379,8 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
   */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
+  HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
+
   uint8_t rcvd_msg[8]; // 8 is max cap for std CAN
 
   char msg[50];
