@@ -71,7 +71,7 @@ void CAN_Filter_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-extern uint32_t motor_speed;
+uint32_t motor_speed = 0;
 CAN_RxHeaderTypeDef RxHeader;
 volatile uint8_t crawl_mode = 0;  // 0 = off, 1 = on
 
@@ -114,7 +114,7 @@ int main(void)
   CAN_Filter_Config();
   // Reverse PIN
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);  // Forward by default
-
+  CAN1_Tx();
   // TEST DAC
 //  HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
 //
@@ -131,6 +131,20 @@ int main(void)
 //     HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac_values[i]);
 //     HAL_Delay(3000); // wait 3 seconds
 //   }
+
+  	if(HAL_CAN_ActivateNotification(&hcan1,CAN_IT_TX_MAILBOX_EMPTY|CAN_IT_RX_FIFO0_MSG_PENDING|CAN_IT_BUSOFF)!= HAL_OK)
+		{
+		Error_Handler();
+		}
+
+	if( HAL_CAN_Start(&hcan1) != HAL_OK)
+		{
+		Error_Handler();
+		}
+	// Start the TIMER interrupt
+	HAL_TIM_Base_Start_IT(&htim6);
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -462,6 +476,10 @@ void CAN1_Tx()
   message[0] = crawl_mode ? 1 : 0;
   message[1] = (motor_speed == -1) ? 255 : (uint8_t)motor_speed;
 
+  char dbg[64];
+  sprintf(dbg, "Tx: crawl=%d, speed=%d\r\n", message[0], message[1]);
+  HAL_UART_Transmit(&huart2, (uint8_t*)dbg, strlen(dbg), HAL_MAX_DELAY);
+
   if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, message, &TxMailbox) != HAL_OK)
   {
     Error_Handler();
@@ -477,7 +495,7 @@ void CAN_Filter_Config(void)
 {
   CAN_FilterTypeDef can1_filter_init;
 
-  can1_filter_init.FilterActivation = DISABLE;
+  can1_filter_init.FilterActivation = ENABLE;
   can1_filter_init.FilterBank  = 0;
   can1_filter_init.FilterFIFOAssignment = CAN_RX_FIFO0;
   // CANid total bits 11
@@ -546,7 +564,10 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
   */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    uint8_t rcvd_msg[8];
+	uint8_t rcvd_msg[8];
+	char dbg_rx[64];
+	sprintf(dbg_rx, "Rx: ID=0x%03lX, Data[0]=%d\r\n", RxHeader.StdId, rcvd_msg[0]);
+	HAL_UART_Transmit(&huart2, (uint8_t*)dbg_rx, strlen(dbg_rx), HAL_MAX_DELAY);
 
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, rcvd_msg) != HAL_OK)
     {

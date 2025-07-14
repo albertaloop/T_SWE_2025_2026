@@ -30,11 +30,12 @@ UART_HandleTypeDef huart2;
 CAN_HandleTypeDef  hcan1;
 TIM_HandleTypeDef  htimer6;
 uint8_t req_counter = 0;
-uint8_t brake_status = 1; // 1 = engaged, 0 = disengaged
+uint8_t brakes_status = 1; // 1 = engaged, 0 = disengaged
 CAN_RxHeaderTypeDef RxHeader;
 
 int main(void)
 {
+  printf("Hello world!");
   HAL_Init();
   SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ);
   GPIO_Init();
@@ -43,7 +44,7 @@ int main(void)
   CAN1_Init();
   CAN_Filter_Config();
 
-//  CAN1_Tx();
+  CAN1_Tx();
 
   if(HAL_CAN_ActivateNotification(&hcan1,CAN_IT_TX_MAILBOX_EMPTY|CAN_IT_RX_FIFO0_MSG_PENDING|CAN_IT_BUSOFF)!= HAL_OK)
   {
@@ -187,7 +188,7 @@ void CAN_Filter_Config(void)
 {
   CAN_FilterTypeDef can1_filter_init;
 
-  can1_filter_init.FilterActivation = DISABLE;
+  can1_filter_init.FilterActivation = ENABLE;
   can1_filter_init.FilterBank  = 0;
   can1_filter_init.FilterFIFOAssignment = CAN_RX_FIFO0;
   // CANid total bits 11
@@ -266,6 +267,7 @@ void TIMER6_Init(void)
   //  htimer6.Init.Period = 10000-1;
 
   // Every 5 seconds:
+  htimer6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htimer6.Init.Prescaler = 49999;  // Divides 50MHz to 1kHz
   htimer6.Init.Period = 4999;      // 1kHz → 5s interrupt
   if( HAL_TIM_Base_Init(&htimer6) != HAL_OK )
@@ -378,6 +380,10 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
   */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
+//  char msg[50];
+//  sprintf(msg,"Brake controller recieved a message!!!!:M0\r\n");
+//  HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
+
   HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
 
   uint8_t rcvd_msg[8]; // 8 is max cap for std CAN
@@ -394,6 +400,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     brakes_status = 0;
     Manage_Solenoids();
     sprintf(msg,"0x201 engage brakes : #%x\r\n",rcvd_msg[0]);
+    HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
   }
 
   else if ( RxHeader.StdId == 0x202 && RxHeader.RTR == 0)
@@ -402,10 +409,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     Manage_Solenoids();
 
     sprintf(msg,"0x202 disengage brakes : #%x\r\n",rcvd_msg[0]);
+    HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
   }
 
 
-   HAL_UART_Transmit(&huart2,(uint8_t*)msg,strlen(msg),HAL_MAX_DELAY);
+
 }
 
 /**

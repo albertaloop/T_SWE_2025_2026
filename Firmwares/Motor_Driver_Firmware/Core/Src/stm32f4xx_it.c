@@ -26,7 +26,9 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-
+extern CAN_HandleTypeDef hcan1;
+extern TIM_HandleTypeDef htim6;
+extern void CAN1_Tx(uint8_t remote);
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
@@ -187,7 +189,7 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
-
+  HAL_SYSTICK_IRQHandler();
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -199,5 +201,36 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
+/**
+  * @brief This function handles CAN_TX interrupts.
+  */
+void CAN1_TX_IRQHandler(void)
+{
+	HAL_CAN_IRQHandler(&hcan1);
+}
+
+/**
+  * @brief This function handles CAN_RX0 interrupts.
+  */
+void CAN1_RX0_IRQHandler(void)
+{
+	HAL_CAN_IRQHandler(&hcan1);
+}
+
+/**
+  * @brief This function handles CAN SCE interrupt.
+  */
+void CAN1_SCE_IRQHandler(void)
+{
+	HAL_CAN_IRQHandler(&hcan1);
+}
+
+/**
+  * @brief This function handles Timer 6 interrupt and DAC underrun interrupts.
+  */
+void TIM6_DAC_IRQHandler(void)
+{
+	HAL_TIM_IRQHandler(&htim6);
+}
 
 /* USER CODE END 1 */

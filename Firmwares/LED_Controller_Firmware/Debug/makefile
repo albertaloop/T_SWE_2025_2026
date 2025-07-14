@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (12.3.rel1)
+# Toolchain: GNU Tools for STM32 (13.3.rel1)
 ################################################################################
 
 -include ../makefile.init
@@ -34,34 +34,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := Brakes_Controller_Firmware
+BUILD_ARTIFACT_NAME := LED_Controller_Firmware
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-Brakes_Controller_Firmware.elf \
+LED_Controller_Firmware.elf \
 
 MAP_FILES += \
-Brakes_Controller_Firmware.map \
+LED_Controller_Firmware.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-Brakes_Controller_Firmware.list \
+LED_Controller_Firmware.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: Brakes_Controller_Firmware.elf secondary-outputs
+main-build: LED_Controller_Firmware.elf secondary-outputs
 
 # Tool invocations
-Brakes_Controller_Firmware.elf Brakes_Controller_Firmware.map: $(OBJS) $(USER_OBJS) C:\Users\jaspr\OneDrive\Documents\STM32Nucleo-F446RE\MCU2_WS\my_ws\Brakes_Controller_Firmware\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Brakes_Controller_Firmware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\jaspr\OneDrive\Documents\STM32Nucleo-F446RE\MCU2_WS\my_ws\Brakes_Controller_Firmware\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Brakes_Controller_Firmware.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+LED_Controller_Firmware.elf LED_Controller_Firmware.map: $(OBJS) $(USER_OBJS) C:\Users\jaspr\OneDrive\Documents\STM32Nucleo-F446RE\MCU2_WS\my_ws\LED_Controller_Firmware\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "LED_Controller_Firmware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\jaspr\OneDrive\Documents\STM32Nucleo-F446RE\MCU2_WS\my_ws\LED_Controller_Firmware\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="LED_Controller_Firmware.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -70,14 +70,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Brakes_Controller_Firmware.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Brakes_Controller_Firmware.list"
+LED_Controller_Firmware.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "LED_Controller_Firmware.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) Brakes_Controller_Firmware.elf Brakes_Controller_Firmware.list Brakes_Controller_Firmware.map default.size.stdout
+	-$(RM) LED_Controller_Firmware.elf LED_Controller_Firmware.list LED_Controller_Firmware.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

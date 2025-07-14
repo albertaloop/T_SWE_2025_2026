@@ -109,7 +109,15 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* USER CODE BEGIN CAN1_MspInit 1 */
+      HAL_NVIC_SetPriority(CAN1_TX_IRQn,15,0);
+	  HAL_NVIC_SetPriority(CAN1_RX0_IRQn,15,0);
+	  HAL_NVIC_SetPriority(CAN1_RX1_IRQn,15,0);
+	  HAL_NVIC_SetPriority(CAN1_SCE_IRQn,15,0);
 
+	  HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+	  HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+	  HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+	  HAL_NVIC_EnableIRQ(CAN1_SCE_IRQn);
     /* USER CODE END CAN1_MspInit 1 */
 
   }
@@ -225,7 +233,12 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
     /* Peripheral clock enable */
     __HAL_RCC_TIM6_CLK_ENABLE();
     /* USER CODE BEGIN TIM6_MspInit 1 */
+    //1. enable the clock for the TIM6 peripheral
+    //2. Enable the IRQ of TIM6
+    HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
 
+    //3. setup the priority for TIM6_DAC_IRQn
+    HAL_NVIC_SetPriority(TIM6_DAC_IRQn,15,0);
     /* USER CODE END TIM6_MspInit 1 */
 
   }
