@@ -91,6 +91,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 	if (htim->Instance == TIM1)
 	    {
 	        HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_1);
+	        HAL_TIM_PWM_Stop_DMA(&htim1, TIM_CHANNEL_2);
 	        datasentflag = 1;              // allow next frame
 	    }
 }
@@ -173,6 +174,7 @@ void WS2812_Send (void)
 	}
 
 	HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_1, (uint32_t *)pwmData, indx);
+	HAL_TIM_PWM_Start_DMA(&htim1, TIM_CHANNEL_2, (uint32_t *)pwmData, indx);
 //	while (!datasentflag){};
 //	datasentflag = 0;
 }
