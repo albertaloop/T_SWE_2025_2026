@@ -1,22 +1,21 @@
 from time import sleep
-from SX127x.LoRa import *
-from SX127x.board_config import BOARD
+from pySX127x.SX127x.LoRa import *
+from pySX127x.SX127x.board_config import BOARD
 from PyQt5.QtCore import QObject, pyqtSignal
+from utils.formatPayload import reconstructPayload, splitPayload
+from config import *
 
 def get_state(msg):
-    print("Got payload:", msg)
-    return ["fault"]
+    payload = reconstructPayload(msg)
+    print("Got payload:", payload)
+    return STATE_BRAKING
 
 class CustomLora(LoRa, QObject):
-    state_updated = pyqtSignal(list)  # the new state will be emitted here
+    state_updated = pyqtSignal(str)  # the new state will be emitted here
 
     def __init__(self, verbose=False):
         LoRa.__init__(self, verbose)
         QObject.__init__(self) 
-        
-        # Mock function
-        self.read_payload = lambda nocheck=True: [0x301]
-        
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([0] * 6)
 

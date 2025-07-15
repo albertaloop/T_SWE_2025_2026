@@ -13,7 +13,8 @@ from Actions.HealthCheck import HealthCheck
 import threading
 
 from CustomLora import *
-from SX127x.board_config import BOARD
+from pySX127x.SX127x.board_config import BOARD
+from config import *
 
 import signal # Make Ctrl+C work with PyQt5 Applications
 signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -24,7 +25,7 @@ class MWindowWrapper(Ui_MainWindow):
         self.setupUi(window)
 
         self.command = None
-        self.current_state = ["idle"]
+        self.current_state = STATE_SAFE
         self.command_requested = ["none"]
         self.healthchk_requested = ["none"]
         self.estop_requested = ["none"]
@@ -57,7 +58,7 @@ class MWindowWrapper(Ui_MainWindow):
     def launchBtn_clicked(self):
         print("Launch button pressed")
         if self.command_requested == ["none"]:
-            if self.current_state == ["ready_to_launch"] :
+            if self.current_state == STATE_READY :
                 self.command_requested = ["launch"]
                 self.executeCommand(Launch(self.lora_module), self.command_requested)
             else :
@@ -80,7 +81,7 @@ class MWindowWrapper(Ui_MainWindow):
     def crawlBtn_clicked(self):
         print("Crawl button pressed")
         if self.command_requested == ["none"]:
-            if self.current_state == ["idle"]:
+            if self.current_state == STATE_SAFE:
                 self.command_requested = ["crawl"]
                 self.executeCommand(Crawl(self.lora_module), self.command_requested)
                 print("Crawl requested")
@@ -94,7 +95,7 @@ class MWindowWrapper(Ui_MainWindow):
     def prepLaunchBtn_clicked(self):
         print("Prepare Launch button pressed")
         if self.command_requested == ["none"]:
-            if self.current_state == ["idle"] :
+            if self.current_state == STATE_SAFE :
                 self.command_requested = ["prep_launch"]
                 self.executeCommand(PrepareLaunch(self.lora_module), self.command_requested)
                 print("Prepare to launch requested")
@@ -139,7 +140,7 @@ class MWindowWrapper(Ui_MainWindow):
             True
         elif state != self.current_state:
             self.current_state = state
-            if state == ['fault']:
+            if state == STATE_FAULT:
                 self.label_12.setStyleSheet("background-color: red")
                 self.label_11.setStyleSheet("background-color: gray")
                 self.label_10.setStyleSheet("background-color: gray")
@@ -147,7 +148,7 @@ class MWindowWrapper(Ui_MainWindow):
                 self.label_8.setStyleSheet("background-color: gray")
                 self.label_7.setStyleSheet("background-color: gray")
                 self.label_6.setStyleSheet("background-color: gray")
-            if state == ['safe']:
+            if state == STATE_SAFE:
                 self.label_12.setStyleSheet("background-color: gray")
                 self.label_11.setStyleSheet("background-color: #89CFF0")
                 self.label_10.setStyleSheet("background-color: gray")
@@ -155,7 +156,7 @@ class MWindowWrapper(Ui_MainWindow):
                 self.label_8.setStyleSheet("background-color: gray")
                 self.label_7.setStyleSheet("background-color: gray")
                 self.label_6.setStyleSheet("background-color: gray")
-            if state == ['ready']:
+            if state == STATE_READY:
                 self.label_12.setStyleSheet("background-color: gray")
                 self.label_11.setStyleSheet("background-color: gray")
                 self.label_10.setStyleSheet("background-color: green")
@@ -163,23 +164,23 @@ class MWindowWrapper(Ui_MainWindow):
                 self.label_8.setStyleSheet("background-color: gray")
                 self.label_7.setStyleSheet("background-color: gray")
                 self.label_6.setStyleSheet("background-color: gray")
-            if state == ['launch']:
-                self.label_12.setStyleSheet("background-color: #89CFF0")
-                self.label_11.setStyleSheet("background-color: gray")
-                self.label_10.setStyleSheet("background-color: gray")
-                self.label_9.setStyleSheet("background-color: green")
-                self.label_8.setStyleSheet("background-color: gray")
-                self.label_7.setStyleSheet("background-color: gray")
-                self.label_6.setStyleSheet("background-color: gray")
-            if state == ['coast']:
-                self.label_12.setStyleSheet("background-color: gray")
-                self.label_11.setStyleSheet("background-color: gray")
-                self.label_10.setStyleSheet("background-color: gray")
-                self.label_9.setStyleSheet("background-color: gray")
-                self.label_8.setStyleSheet("background-color: green")
-                self.label_7.setStyleSheet("background-color: gray")
-                self.label_6.setStyleSheet("background-color: gray")
-            if state == ['break']:
+            # if state == ['launch']:
+            #     self.label_12.setStyleSheet("background-color: #89CFF0")
+            #     self.label_11.setStyleSheet("background-color: gray")
+            #     self.label_10.setStyleSheet("background-color: gray")
+            #     self.label_9.setStyleSheet("background-color: green")
+            #     self.label_8.setStyleSheet("background-color: gray")
+            #     self.label_7.setStyleSheet("background-color: gray")
+            #     self.label_6.setStyleSheet("background-color: gray")
+            # if state == ['coast']:
+            #     self.label_12.setStyleSheet("background-color: gray")
+            #     self.label_11.setStyleSheet("background-color: gray")
+            #     self.label_10.setStyleSheet("background-color: gray")
+            #     self.label_9.setStyleSheet("background-color: gray")
+            #     self.label_8.setStyleSheet("background-color: green")
+            #     self.label_7.setStyleSheet("background-color: gray")
+            #     self.label_6.setStyleSheet("background-color: gray")
+            if state == STATE_BRAKING:
                 self.label_12.setStyleSheet("background-color: gray")
                 self.label_11.setStyleSheet("background-color: gray")
                 self.label_10.setStyleSheet("background-color: gray")
@@ -187,7 +188,7 @@ class MWindowWrapper(Ui_MainWindow):
                 self.label_8.setStyleSheet("background-color: gray")
                 self.label_7.setStyleSheet("background-color: gray")
                 self.label_6.setStyleSheet("background-color: yellow")
-            if state == ['crawl']:
+            if state == STATE_CRAWLING:
                 self.label_12.setStyleSheet("background-color: gray")
                 self.label_11.setStyleSheet("background-color: gray")
                 self.label_10.setStyleSheet("background-color: gray")

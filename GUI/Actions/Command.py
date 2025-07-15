@@ -1,4 +1,6 @@
 from CustomLora import *
+from config import *
+from utils.formatPayload import splitPayload
 
 class Command:
     def __init__(self, message, receiver, ack_msg):
@@ -6,9 +8,8 @@ class Command:
         self.ack_msg = ack_msg
         self.receiver = receiver
     def execute(self, command_requested, cmd_lock):
-        print(self.message)
-        # while True:
-        self.receiver.write_payload(self.message)
+        print(splitPayload(self.message))
+        self.receiver.write_payload(splitPayload(self.message))
         self.receiver.set_mode(MODE.TX)
         sleep(0.5)
         self.receiver.reset_ptr_rx()
@@ -23,12 +24,14 @@ class Command:
 class Crawl(Command):
     def __init__(self, receiver):
         self.receiver = receiver
-        self.message = [0x310]
+        self.receiver.read_payload = lambda nocheck=True: splitPayload(CRAWL_CMD)
+        self.message = CRAWL_CMD
 
 class EStop(Command):
     def __init__(self, receiver):
         self.receiver = receiver
-        self.message = [0x20]
+        self.receiver.read_payload = lambda nocheck=True: splitPayload(BRAKE_ENGAGE_CMD)
+        self.message = BRAKE_ENGAGE_CMD
 
 # Not using for K-Days
 class Launch(Command):
