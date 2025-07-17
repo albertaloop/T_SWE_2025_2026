@@ -1,6 +1,6 @@
 from CustomLora import *
 from config import *
-from utils.formatPayload import splitPayload
+from utils.formatPayload import convertStringToByteList
 
 class Command:
     def __init__(self, message, receiver, ack_msg):
@@ -8,8 +8,8 @@ class Command:
         self.ack_msg = ack_msg
         self.receiver = receiver
     def execute(self, command_requested, cmd_lock):
-        print(splitPayload(self.message))
-        self.receiver.write_payload(splitPayload(self.message))
+        print(convertStringToByteList(self.message))
+        self.receiver.write_payload(convertStringToByteList(self.message))
         self.receiver.set_mode(MODE.TX)
         sleep(0.5)
         self.receiver.reset_ptr_rx()
@@ -24,25 +24,24 @@ class Command:
 class Crawl(Command):
     def __init__(self, receiver):
         self.receiver = receiver
-        self.receiver.read_payload = lambda nocheck=True: splitPayload(CRAWL_CMD)
-        self.message = CRAWL_CMD
+        self.receiver.read_payload = lambda nocheck=True: convertStringToByteList(STATE_CRAWLING)
+        self.message = STATE_CRAWLING
 
 class EStop(Command):
     def __init__(self, receiver):
         self.receiver = receiver
-        self.receiver.read_payload = lambda nocheck=True: splitPayload(BRAKE_ENGAGE_CMD)
-        self.message = BRAKE_ENGAGE_CMD
+        self.receiver.read_payload = lambda nocheck=True: convertStringToByteList(STATE_FAULT)
+        self.message = STATE_FAULT
 
 # Not using for K-Days
-class Launch(Command):
-    def __init__(self, receiver):
-        self.receiver = receiver
-        self.message = [0xC0, 0xC4]
+# class Launch(Command):
+#     def __init__(self, receiver):
+#         self.receiver = receiver
+#         self.message = [0xC0, 0xC4]
 
 class PrepareLaunch(Command):
     def __init__(self, receiver):
         self.receiver = receiver
-        amsg = [0xA0, 0xA2]
-        self.message = [0xC0, 0xC2]
-        self.ack_msg = bytes(amsg)
+        self.receiver.read_payload = lambda nocheck=True: convertStringToByteList(STATE_READY)
+        self.message = STATE_READY
 

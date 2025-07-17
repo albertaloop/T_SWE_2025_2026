@@ -26,7 +26,7 @@ MOTOR_START_30_CMD  = 0x303  # start motors (10%)
 MOTOR_START_50_CMD  = 0x304  # start motors (50%)
 MOTOR_START_70_CMD  = 0x305  # start motors (70%)
 MOTOR_START_100_CMD = 0x306  # Full power command  
-CRAWL_CMD = 0x310
+KDAYS_CRAWL_CMD = 0x310
 
 # Timeouts
 HEARTBEAT_TIMEOUT = 10         # Seconds before triggering a fault on missing heartbeat :contentReference[oaicite:11]{index=11}  

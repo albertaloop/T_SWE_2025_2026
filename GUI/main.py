@@ -4,7 +4,7 @@ from PyQt5.QtCore import pyqtProperty, QCoreApplication, QObject, QUrl
 import sys
 from AlbertaLoop_UI import Ui_MainWindow
 
-from Actions.Command import Launch
+# from Actions.Command import Launch
 from Actions.Command import PrepareLaunch
 from Actions.Command import EStop
 from Actions.Command import Crawl
@@ -25,7 +25,7 @@ class MWindowWrapper(Ui_MainWindow):
         self.setupUi(window)
 
         self.command = None
-        self.current_state = STATE_SAFE
+        self.current_state = STATE_FAULT
         self.command_requested = ["none"]
         self.healthchk_requested = ["none"]
         self.estop_requested = ["none"]
@@ -43,8 +43,8 @@ class MWindowWrapper(Ui_MainWindow):
         # self.speedGaugeLayout.addWidget(self.spedometerWidget)
 
         # Connect clicked functions
-        self.launchBtn.clicked.connect(self.launchBtn_clicked)
-        self.healthChkBtn.clicked.connect(self.healthChkBtn_clicked)
+        # self.launchBtn.clicked.connect(self.launchBtn_clicked)
+        # self.healthChkBtn.clicked.connect(self.healthChkBtn_clicked)
         self.crawlBtn.clicked.connect(self.crawlBtn_clicked)
         self.prepLaunchBtn.clicked.connect(self.prepLaunchBtn_clicked)
         self.eStopBtn.clicked.connect(self.eStopBtn_clicked)
@@ -81,7 +81,7 @@ class MWindowWrapper(Ui_MainWindow):
     def crawlBtn_clicked(self):
         print("Crawl button pressed")
         if self.command_requested == ["none"]:
-            if self.current_state == STATE_SAFE:
+            if self.current_state == STATE_READY:
                 self.command_requested = ["crawl"]
                 self.executeCommand(Crawl(self.lora_module), self.command_requested)
                 print("Crawl requested")
