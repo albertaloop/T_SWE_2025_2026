@@ -89,6 +89,8 @@ def on_press(key):
        elif key.char == 'b' and not state['braking'] :
            change_state('braking')
            print(f"Toggle BRAKING: {state['braking']}")
+       elif key.char == '\n' :
+           quit()
    except AttributeError:
        pass  # special keys ignored
 
@@ -119,6 +121,7 @@ def current_state() :
 def change_state(next_state):
     current = current_state()
     if current is None:
+        print("State is none.")
         return False
     elif next_state in DEFAULT_TRANSITIONS[current]:
         state[current] = False
@@ -135,6 +138,7 @@ def change_state(next_state):
 # --- Conditions ---
 class InFault(py_trees.behaviour.Behaviour):
    def update(self):
+       print("Check fault")
        return py_trees.common.Status.SUCCESS if check_fault() else py_trees.common.Status.FAILURE
 
 
@@ -142,6 +146,7 @@ class InFault(py_trees.behaviour.Behaviour):
 
 class InDebug(py_trees.behaviour.Behaviour):
    def update(self):
+       print("Check debug")
        return py_trees.common.Status.SUCCESS if check_debug() else py_trees.common.Status.FAILURE
 
 
@@ -149,6 +154,7 @@ class InDebug(py_trees.behaviour.Behaviour):
 
 class InSafeToApproach(py_trees.behaviour.Behaviour):
    def update(self):
+       print("Check safe")
        return py_trees.common.Status.SUCCESS if check_safe() else py_trees.common.Status.FAILURE
 
 
@@ -156,6 +162,7 @@ class InSafeToApproach(py_trees.behaviour.Behaviour):
 
 class InReadyToRun(py_trees.behaviour.Behaviour):
    def update(self):
+       print("Check ready")
        return py_trees.common.Status.SUCCESS if check_ready() else py_trees.common.Status.FAILURE
 
 
@@ -163,10 +170,12 @@ class InReadyToRun(py_trees.behaviour.Behaviour):
 
 class InCrawling(py_trees.behaviour.Behaviour):
    def update(self):
+       print("Check crawling")
        return py_trees.common.Status.SUCCESS if check_crawling() else py_trees.common.Status.FAILURE
    
 class InBraking(py_trees.behaviour.Behaviour):
    def update(self):
+       print("Check braking")
        return py_trees.common.Status.SUCCESS if check_braking() else py_trees.common.Status.FAILURE
 
 
@@ -176,7 +185,7 @@ class InBraking(py_trees.behaviour.Behaviour):
 class HandleFault(py_trees.behaviour.Behaviour):
    def update(self):
         print("State is FAULT. Running operations...")
-        safe = send_message(DEFAULT_MESSAGES['ENGAGE_BRAKES']) and send_message(DEFAULT_MESSAGES['STOP_MOTORS']) and send_message(DEFAULT_MESSAGES['LED_FAULT'])
+        safe = send_message(DEFAULT_MESSAGES['ENGAGE_BRAKES']) and send_message(DEFAULT_MESSAGES['STOP_MOTOR']) and send_message(DEFAULT_MESSAGES['LED_FAULT'])
         if safe and check_signals() :
             print('Fault operations successful. Changing state to SAFE...')
             change_state('safe')
@@ -207,7 +216,7 @@ class SafeToApproach(py_trees.behaviour.Behaviour):
            print("State is SAFE. Running operations...")
            if self.attempt_count :  
                 self.attempt_count -= 1
-                safe = send_message(DEFAULT_MESSAGES['ENGAGE_BRAKES']) and send_message(DEFAULT_MESSAGES['STOP_MOTORS']) and send_message(DEFAULT_MESSAGES['LED_SAFE'])
+                safe = send_message(DEFAULT_MESSAGES['ENGAGE_BRAKES']) and send_message(DEFAULT_MESSAGES['STOP_MOTOR']) and send_message(DEFAULT_MESSAGES['LED_SAFE'])
                 if safe and check_signals() :
                         print('Operations successful — pod is safe to approach. Will remain in SAFE state until given command or error occurs.')
                         return py_trees.common.Status.RUNNING
@@ -234,7 +243,7 @@ class ReadyToRun(py_trees.behaviour.Behaviour):
            print("State is READY. Running operations...")
            if self.attempt_count :
                 self.attempt_count -= 1
-                safe = send_message(DEFAULT_MESSAGES['DISENGAGE_BRAKES']) and send_message(DEFAULT_MESSAGES['STOP_MOTORS']) and send_message(DEFAULT_MESSAGES['LED_READY'])
+                safe = send_message(DEFAULT_MESSAGES['DISENGAGE_BRAKES']) and send_message(DEFAULT_MESSAGES['STOP_MOTOR']) and send_message(DEFAULT_MESSAGES['LED_READY'])
                 if safe and check_signals() :
                         print('Operations successful — pod is ready to run. Will remain in READY state until given command or error occurs.')
                         return py_trees.common.Status.RUNNING
@@ -338,7 +347,7 @@ class CheckSignals(py_trees.behaviour.Behaviour):
         unresponsive = check_signals()
         if unresponsive:
             change_state('fault')
-            return py_trees.common.Status.FAILURE
+            return py_trees.common.Status.RUNNING
         return py_trees.common.Status.SUCCESS
 
 
@@ -436,14 +445,13 @@ def check_signals() :
                 print(f"{key} has not responded in {time_elasped} seconds!\n Entering fault state.")
                 change_state('fault')
             else :
-                print(f"{key} has not responded in {time_elasped} seconds!\n Remaining in fault state.")
-        signal_time_elasped[key] += 1 
+                print(f"{key} has not responded in {time_elasped} seconds!\n Remaining in fault state.") 
 
 
        
 # --- Build Behavior Tree ---
 def create_behavior_tree():
-   root = py_trees.composites.Selector("Root Selector", memory=False) # Memory false makes sure that the children are re-evaluated for each tick (useful for when state changes)
+   root = py_trees.composites.Parallel("Root", policy=py_trees.common.ParallelPolicy.SuccessOnAll()) # Memory false makes sure that the children are re-evaluated for each tick (useful for when state changes)
 
 
    # parallel monitor for running subscriber and signal checks
@@ -526,19 +534,22 @@ if __name__ == '__main__':
 
     initialized = None
 
-    while not initialized or initialized != b'Aloop comms' :
+    while not initialized or initialized.data != b'Aloop' :
         initialized = CANBUS.recv()
-        print('Initialization message not recieved. Please send "Aloop comms".')
+        print(f"Recieved message: {initialized.data}")
+        print('Initialization message not recieved. Please send "Aloop".')
 
     print('Message recieved! Starting FSM.')
     
     start_keyboard_listener()
    
     tree = py_trees.trees.BehaviourTree(create_behavior_tree())
+    print("Tree initialized.")
 
-    signal_time_elasped['brakes'] = signal_time_elasped['motor'] = signal_time_elasped['LED'] = signal_time_elasped['LORA'] = datetime.now()
+    signal_time_elasped['brakes'], signal_time_elasped['motor'], signal_time_elasped['LED'], signal_time_elasped['LORA'] = datetime.now()
   
     tree.setup()
+    print("Tree set up. Beginning tree ticks.")
 
     try:
         rate = rospy.Rate(1)
