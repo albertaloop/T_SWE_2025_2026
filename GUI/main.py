@@ -15,6 +15,7 @@ import threading
 from CustomLora import *
 from pySX127x.SX127x.board_config import BOARD
 from config import *
+from utils.formatPayload import PodMessage
 
 import signal # Make Ctrl+C work with PyQt5 Applications
 signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -25,13 +26,12 @@ class MWindowWrapper(Ui_MainWindow):
         self.setupUi(window)
 
         self.command = None
-        self.current_state = STATE_FAULT
+        self.current_state = STATE_SAFE
         self.command_requested = ["none"]
         self.healthchk_requested = ["none"]
         self.estop_requested = ["none"]
         self.cmd_lock = threading.Lock()
         self.lora_module = lora_module
-        self.lora_module.set_mode(MODE.RXCONT)
 
         # -----------------------------------------------------------------
         # Add functionality below!
@@ -220,7 +220,7 @@ if __name__ == "__main__":
         print("START")
         MainWindow = QMainWindow()
         mWindowWrapper = MWindowWrapper(MainWindow, lora)
-
+        lora.start()
         # Connect the LoRa signal to the GUI update function
         lora.state_updated.connect(mWindowWrapper.updateCurrentState)
         

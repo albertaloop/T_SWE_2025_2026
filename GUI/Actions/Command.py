@@ -1,15 +1,20 @@
 from CustomLora import *
 from config import *
-from utils.formatPayload import convertStringToByteList
+from utils.formatPayload import convertStringToByteList, packPayload
+from time import sleep
 
 class Command:
-    def __init__(self, message, receiver, ack_msg):
+    def __init__(self, message, receiver: CustomLora):
         self.message = message
-        self.ack_msg = ack_msg
         self.receiver = receiver
     def execute(self, command_requested, cmd_lock):
-        print(convertStringToByteList(self.message))
-        self.receiver.write_payload(convertStringToByteList(self.message))
+        self.receiver.current_message.gui_command = self.message
+
+        # Mock
+        self.receiver.read_payload = lambda nocheck=True: packPayload(self.receiver.current_message)
+        
+        print("Sending: ", self.receiver.current_message)
+        self.receiver.write_payload(list(packPayload(self.receiver.current_message)))
         self.receiver.set_mode(MODE.TX)
         sleep(0.5)
         self.receiver.reset_ptr_rx()
@@ -24,13 +29,11 @@ class Command:
 class Crawl(Command):
     def __init__(self, receiver):
         self.receiver = receiver
-        self.receiver.read_payload = lambda nocheck=True: convertStringToByteList(STATE_CRAWLING)
         self.message = STATE_CRAWLING
 
 class EStop(Command):
     def __init__(self, receiver):
         self.receiver = receiver
-        self.receiver.read_payload = lambda nocheck=True: convertStringToByteList(STATE_FAULT)
         self.message = STATE_FAULT
 
 # Not using for K-Days
@@ -42,6 +45,5 @@ class EStop(Command):
 class PrepareLaunch(Command):
     def __init__(self, receiver):
         self.receiver = receiver
-        self.receiver.read_payload = lambda nocheck=True: convertStringToByteList(STATE_READY)
         self.message = STATE_READY
 

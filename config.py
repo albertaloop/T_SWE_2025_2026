@@ -80,3 +80,6 @@ STATE_COLORS = {               # Used by LED controller node
     STATE_BRAKING:  'ORANGE',  
     STATE_DEBUG:    'PURPLE',  
 }
+
+# Message to test connection between client and server on startup
+CONNECTION_MESSAGE = "Albertaloop"
