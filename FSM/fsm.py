@@ -190,7 +190,7 @@ class HandleFault(py_trees.behaviour.Behaviour):
         if safe and check_signals() :
             print('Fault operations successful. Changing state to SAFE...')
             change_state('safe')
-            return py_trees.common.Status.FAILURE
+            return py_trees.common.Status.SUCCESS
         else :
             print('Failed to complete fault operations. Will remain in FAULT state.')
         return py_trees.common.Status.RUNNING
@@ -445,20 +445,6 @@ def check_signals() :
 
 
 
-class AlwaysRunPolicy(ParallelPolicy):
-    def __init__(self):
-        super().__init__(
-            success_threshold=len(self.children),
-            failure_threshold=len(self.children),  # only fails if all children fail
-            synchronise=False  # do not wait for children to finish
-        )
-
-    def update(self):
-        if all(child.status == Status.FAILURE for child in self.children):
-            return Status.FAILURE
-        return Status.RUNNING
-
-
        
 # --- Build Behavior Tree ---
 def create_behavior_tree():
@@ -479,7 +465,7 @@ def create_behavior_tree():
    monitor.add_children([brakes_subscriber, motor_subscriber, LED_subscriber, LORA_subscriber, signal_checker])
 
 
-   state_machine = py_trees.composites.Parallel("State Machine", policy = AlwaysRunPolicy())
+   state_machine = py_trees.composites.Selector("State Machine")
 
 
    fault_seq = py_trees.composites.ReactiveSequence("Fault Sequence", memory=False)
@@ -494,7 +480,7 @@ def create_behavior_tree():
 
 
 
-   normal_seq = py_trees.composites.ReactiveSequence("Normal Operation Sequence", memory=False)
+   normal_seq = py_trees.composites.Sequence("Normal Operation Sequence", memory=False)
 
 
 
