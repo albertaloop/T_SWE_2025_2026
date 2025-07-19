@@ -2,11 +2,11 @@ import time
 from pySX127x.SX127x.LoRa import *
 from pySX127x.SX127x.board_config import BOARD
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
-from utils.formatPayload import unpackPayload, convertStringToByteList, PodMessage
+from utils.formatPayload import unpackPayload, convertStringToByteList, PodMessage, convertByteListToString
 from config import *
 
 class CustomLora(LoRa, QObject):
-    state_updated = pyqtSignal(str)  # the new state will be emitted here
+    state_updated = pyqtSignal(PodMessage)  # the new state will be emitted here
 
     def __init__(self, verbose=False):
         LoRa.__init__(self, verbose)
@@ -26,17 +26,21 @@ class CustomLora(LoRa, QObject):
         print("\nRxDone")
         self.clear_irq_flags(RxDone=1)
         payload = self.read_payload(nocheck=True)
+        str_payload = convertByteListToString(payload)
+        print(str_payload)
+        if (str_payload == CONNECTION_MESSAGE):
+            print("Connected to server")
+            self.connected = True
+            self.connection_timer.stop()
+        else:
+            BOARD.led_off()
+            return
+
         new_msg = unpackPayload(payload)
 
         self.current_message = new_msg
         print("Received:", new_msg)
-
-        if (new_msg.fsm_state == CONNECTION_MESSAGE):
-            print("Connected to server")
-            self.connected = True
-            self.connection_timer.stop()
-
-        self.state_updated.emit(new_msg.fsm_state)
+        self.state_updated.emit(new_msg)
         BOARD.led_off()
 
     def on_tx_done(self):
