@@ -3,8 +3,8 @@ import threading
 import time
 import sys
 
-import rospy
-import can
+#import rospy
+#import can
 
 # CAN/FSM config constants
 from config import (
@@ -21,7 +21,8 @@ from config import (
 )
 
 # Bring in your LoRa server implementation
-from LORA_SERVER import mylora, BOARD
+sys.path.append('/home/ubuntu/pySX127x')
+from lora_server import mylora, BOARD
 from SX127x.LoRa import BW, CODING_RATE, MODE
 
 # Global FSM state and heartbeat timers
@@ -29,7 +30,7 @@ CANBUS = None
 state = DEFAULT_STATE.copy()
 signal_time_elapsed = {'brakes': 0, 'motor': 0, 'LED': 0}
 
-
+'''
 def change_state(next_state):
     """Switch to next_state if valid."""
     current = next(k for k, v in state.items() if v)
@@ -112,7 +113,7 @@ def can_thread():
 
         time.sleep(0.01)
 
-
+'''
 def lora_thread():
     """Thread entry point: spin up your existing mylora server."""
     BOARD.setup()
@@ -126,6 +127,7 @@ def lora_thread():
     lora.set_spreading_factor(12)
     lora.set_rx_crc(True)
     lora.set_low_data_rate_optim(True)
+    lora.set_freq(915)
 
     # Blocking start() method loops send/receive/ACK
     try:
@@ -136,9 +138,9 @@ def lora_thread():
 
 
 if __name__ == '__main__':
-    rospy.init_node('pod_comm_node', anonymous=False)
+    #rospy.init_node('pod_comm_node', anonymous=False)
+    print('pod_comm_node')
+    #threading.Thread(target=can_thread, name="CAN-Thread", daemon=True).start()
+    threading.Thread(target=lora_thread, name="LoRa-Thread", daemon=True).run()
 
-    threading.Thread(target=can_thread, name="CAN-Thread", daemon=True).start()
-    threading.Thread(target=lora_thread, name="LoRa-Thread", daemon=True).start()
-
-    rospy.spin()
+    #rospy.spin()
