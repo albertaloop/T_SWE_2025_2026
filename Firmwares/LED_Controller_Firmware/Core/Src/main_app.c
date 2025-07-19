@@ -24,7 +24,7 @@ void CAN_Filter_Config(void);
 void TIMER6_Init(void);
 void Send_response(uint32_t StdId);
 void LED_Manage_Output();
-
+void CAN_Tx_Test_All_Speeds(void);
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart2;
 CAN_HandleTypeDef  hcan1;
@@ -44,6 +44,8 @@ int main(void)
   CAN1_Init();
   CAN_Filter_Config();
 
+  CAN1_Tx();
+
   if(HAL_CAN_ActivateNotification(&hcan1,CAN_IT_TX_MAILBOX_EMPTY|CAN_IT_RX_FIFO0_MSG_PENDING|CAN_IT_BUSOFF)!= HAL_OK)
   {
     Error_handler();
@@ -55,6 +57,9 @@ int main(void)
   }
   // Start the TIMER interrupt
   HAL_TIM_Base_Start_IT(&htimer6);
+
+  HAL_Delay(1000);
+//  CAN_Tx_Test_All_Speeds();
 
   while(1);
 
@@ -195,9 +200,9 @@ void CAN_Filter_Config(void)
   // Accept only 4XX
   // id 1000 = 0x8
   // mask 1110 = 0xE
-  can1_filter_init.FilterIdHigh = 0x8000;
+  can1_filter_init.FilterIdHigh = 0x0000;
   can1_filter_init.FilterIdLow = 0x0000;
-  can1_filter_init.FilterMaskIdHigh = 0XE000;
+  can1_filter_init.FilterMaskIdHigh = 0X0000;
   can1_filter_init.FilterMaskIdLow = 0x0000;
   can1_filter_init.FilterMode = CAN_FILTERMODE_IDMASK;
   can1_filter_init.FilterScale = CAN_FILTERSCALE_32BIT;
@@ -265,6 +270,7 @@ void TIMER6_Init(void)
   //  htimer6.Init.Period = 10000-1;
 
   // Every 5 seconds:
+  htimer6.Init.CounterMode = TIM_COUNTERMODE_UP; // ← Required!
   htimer6.Init.Prescaler = 49999;  // Divides 50MHz to 1kHz
   htimer6.Init.Period = 4999;      // 1kHz → 5s interrupt
   if( HAL_TIM_Base_Init(&htimer6) != HAL_OK )
@@ -377,6 +383,8 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
   */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
+  HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_5);
+
   uint8_t rcvd_msg[8]; // 8 is max cap for std CAN
 
   char msg[50];
@@ -493,6 +501,46 @@ void LED_Manage_Output()
     break;
   }
 }
+void CAN_Tx_Test_All_Speeds(void)
+{
+    CAN_TxHeaderTypeDef TxHeader;
+    uint32_t TxMailbox;
+    uint8_t dummy_payload = 0xAB;
+
+    TxHeader.DLC = 1;
+    TxHeader.IDE = CAN_ID_STD;
+    TxHeader.RTR = CAN_RTR_DATA;
+
+    uint16_t test_ids[] = {
+        0x301, // Stop
+        0x302, // 10%
+        0x303, // 30%
+        0x304, // 50%
+        0x305, // 70%
+        0x306, // 100%
+        0x3FF, // Reverse ON
+        0x310  // Crawl mode
+    };
+
+    char msg[64];
+
+    for (int i = 0; i < sizeof(test_ids)/sizeof(test_ids[0]); i++)
+    {
+        TxHeader.StdId = test_ids[i];
+
+        if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, &dummy_payload, &TxMailbox) != HAL_OK)
+        {
+            Error_handler();
+        }
+
+        sprintf(msg, "Sent test CAN ID: 0x%03X\r\n", test_ids[i]);
+        HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+
+        HAL_Delay(10000); // 3-second delay between each message
+    }
+}
+
+
 
 //void Send_response(uint32_t StdId)
 //{
