@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QDialog, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QDialog, QHBoxLayout, QLabel
 from PyQt5.QtCore import pyqtProperty, QCoreApplication, QObject, QUrl
 import sys
 from AlbertaLoop_UI import Ui_MainWindow
@@ -133,6 +133,10 @@ class MWindowWrapper(Ui_MainWindow):
         if text.lower() == "exit":
             sys.exit()
         print("command >> ", text)
+    
+    def handleNewMessage(self, message: PodMessage):
+        self.updateCurrentState(message.fsm_state)
+        self.addMessageLabel(f"New: {message}")
 
     #updates label colors if state is not equal to current_state
     def updateCurrentState(self, state):
@@ -197,6 +201,10 @@ class MWindowWrapper(Ui_MainWindow):
                 self.label_7.setStyleSheet("background-color: yellow")
                 self.label_6.setStyleSheet("background-color: gray")
 
+    def addMessageLabel(self, message: str):
+        label = QLabel(message)
+        self.messagesLayout.addWidget(label)
+
     
         
 if __name__ == "__main__":
@@ -222,7 +230,7 @@ if __name__ == "__main__":
         mWindowWrapper = MWindowWrapper(MainWindow, lora)
         lora.start()
         # Connect the LoRa signal to the GUI update function
-        lora.state_updated.connect(mWindowWrapper.updateCurrentState)
+        lora.state_updated.connect(mWindowWrapper.handleNewMessage)
         
         MainWindow.show()
         sys.exit(app.exec_())
