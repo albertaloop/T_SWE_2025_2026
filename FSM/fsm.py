@@ -1,5 +1,5 @@
-
-
+import os
+import sys
 import can
 import rospy
 import py_trees
@@ -9,6 +9,13 @@ from datetime import datetime
 from py_trees.common import ParallelPolicy
 
 
+
+
+def clear_terminal() :
+    if os.name == 'nt' :
+        _ = os.system('cls')
+    else :
+        _ = os.system('clear')
 
 
 # CANbus
@@ -90,8 +97,7 @@ def on_press(key):
        elif key.char == 'b' and not state['braking'] :
            change_state('braking')
            print(f"Toggle BRAKING: {state['braking']}")
-       elif key.char == '\n' :
-           quit()
+
    except AttributeError:
        pass  # special keys ignored
 
@@ -465,16 +471,16 @@ def create_behavior_tree():
    monitor.add_children([brakes_subscriber, motor_subscriber, LED_subscriber, LORA_subscriber, signal_checker])
 
 
-   state_machine = py_trees.composites.Selector("State Machine")
+   state_machine = py_trees.composites.Selector("State Machine", memory = False)
 
 
-   fault_seq = py_trees.composites.ReactiveSequence("Fault Sequence", memory=False)
+   fault_seq = py_trees.composites.Sequence("Fault Sequence", memory=False)
    fault_seq.add_children([InFault(name="Check fault"), HandleFault(name="Handle fault")])
 
 
 
 
-   debug_seq = py_trees.composites.ReactiveSequence("Debug Sequence", memory=False)
+   debug_seq = py_trees.composites.Sequence("Debug Sequence", memory=False)
    debug_seq.add_children([InDebug(name="Check debug"), RunDiagnostics(name="Run diagnostics")])
 
 
@@ -485,7 +491,7 @@ def create_behavior_tree():
 
 
 
-   safe_seq = py_trees.composites.ReactiveSequence("Safe Sequence", memory=False)
+   safe_seq = py_trees.composites.Sequence("Safe Sequence", memory=False)
    safe_seq.add_children([
        InSafeToApproach(name="Check safe"),
        SafeToApproach(name="Safe to approach")
@@ -494,7 +500,7 @@ def create_behavior_tree():
 
 
 
-   ready_seq = py_trees.composites.ReactiveSequence("Ready Sequence", memory=False)
+   ready_seq = py_trees.composites.Sequence("Ready Sequence", memory=False)
    ready_seq.add_children([
        InReadyToRun(name="Check ready"),
        ReadyToRun(name="Ready to run")
@@ -503,7 +509,7 @@ def create_behavior_tree():
 
 
 
-   main_seq = py_trees.composites.ReactiveSequence("Main Sequence", memory=False)
+   main_seq = py_trees.composites.Sequence("Main Sequence", memory=False)
    main_seq.add_children([
        InCrawling(name="Check Crawling"),
        ExecuteCrawling(name="Crawling", max_attempt_count=5),
@@ -543,16 +549,25 @@ if __name__ == '__main__':
     tree = py_trees.trees.BehaviourTree(create_behavior_tree())
     print("Tree initialized.")
 
-    signal_time_elasped['brakes'], signal_time_elasped['motor'], signal_time_elasped['LED'], signal_time_elasped['LORA'] = datetime.now()
+    dt = datetime.now()
+    signal_time_elasped['brakes'] = dt
+    signal_time_elasped['motor'] = dt
+    signal_time_elasped['LED'] = dt
+    signal_time_elasped['LORA'] = dt
   
     tree.setup()
     print("Tree set up. Beginning tree ticks.")
 
+    count = 0
     try:
         rate = rospy.Rate(1)
         while not rospy.is_shutdown():
             tree.tick()
             rate.sleep()
+            if count == -2 :
+                print("\033c", end = "")
+                count = 0
+            else : count += 1
            
     except KeyboardInterrupt:
         print("\nShutting down...")
