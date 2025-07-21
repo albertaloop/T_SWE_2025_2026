@@ -25,6 +25,8 @@ import time
 from SX127x.LoRa import *
 #from SX127x.LoRaArgumentParser import LoRaArgumentParser
 from SX127x.board_config import BOARD
+from utils.formatPayload import unpackPayload, convertStringToByteList, PodMessage, convertByteListToString
+from config import *
 
 BOARD.setup()
 BOARD.reset()
@@ -46,12 +48,27 @@ class mylora(LoRa):
         print ("Receive: ")
         #print(bytes(payload).decode("utf-8",'ignore')) # Receive DATA
         print(payload)
+        str_payload = convertByteListToString(payload)
+        print(str_payload)
+        if (str_payload == CONNECTION_MESSAGE):
+            print("Connected to server")
+            print ("Send: ACK")
+            time.sleep(2) # Wait for the client be ready
+            self.write_payload(convertStringToByteList(CONNECTION_MESSAGE))
+            self.set_mode(MODE.TX)
+        else:
+            BOARD.led_off()
+            return
+        upacked_payload = unpackPayload(str_payload)
+        print(unpacked_payload)
         BOARD.led_off()
-        time.sleep(1) # Wait for the client be ready
-        print ("Send: ACK")
-        self.write_payload([255, 255, 0, 0, 65, 67, 75, 0]) # Send ACK
-        self.set_mode(MODE.TX)
-        self.var=1
+        #time.sleep(1) # Wait for the client be ready
+        #self.write_payload([255, 255, 0, 0, 65, 67, 75, 0]) # Send ACK
+        #self.set_mode(MODE.TX)
+        #self.var=1
+        time.sleep(2)
+        self.reset_ptr_rx()
+        self.set_mode(MODE.RXCONT)
 
     def on_tx_done(self):
         print("\nTxDone")
@@ -77,21 +94,32 @@ class mylora(LoRa):
         print("\non_FhssChangeChannel")
         print(self.get_irq_flags())
 
-    def start(self):          
+    def start(self):
         while True:
+            self.reset_ptr_rx()
+            self.set_mode(MODE.RXCONT) # Receiver mode
+            while True:
+                pass;
+
+    '''
+    def start(self):
+        #self.reset_ptr_rx()
+        #self.set_mode(MODE.RXCONT) # Receiver mode
+        while True:       
             while (self.var==0):
-                print ("Send: INF")
+                #print ("Send: INF")
                 self.write_payload([255, 255, 0, 0, 73, 78, 70, 0]) # Send INF
                 self.set_mode(MODE.TX)
-                time.sleep(1) # there must be a better solution but sleep() works
+                time.sleep(2) # there must be a better solution but sleep() works
                 self.reset_ptr_rx()
                 self.set_mode(MODE.RXCONT) # Receiver mode
             
                 start_time = time.time()
                 while (time.time() - start_time < 10): # wait until receive data or 10s
                     pass;
-            
+                    
             self.var=0
             self.reset_ptr_rx()
             self.set_mode(MODE.RXCONT) # Receiver mode
-            time.sleep(10)
+            time.sleep(2)
+            '''
