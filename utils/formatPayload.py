@@ -5,10 +5,10 @@ from config import *
 # Data to be sent over lora
 @dataclass
 class PodMessage:
-    fsm_state: str = STATE_SAFE
-    can_brake: bytes = bytes(10)
-    can_motors: bytes = bytes(10)
-    can_led: bytes = bytes(10)
+    fsm_state: bytes = bytes(1)
+    can_brake: bytes = bytes(4)
+    can_motors: bytes = bytes(4)
+    can_led: bytes = bytes(4)
     gui_command: str = ""
 
 # Formats 2 byte payload to a list
@@ -25,13 +25,13 @@ def convertStringToByteList(string):
 def convertByteListToString(list):
   return bytes(list).decode("utf-8",'ignore')
 
-# 8 bytes for the state string, 10 bytes for each can message
-fmt = '8s10s10s10s'
+# 1 byte for the state, 4 bytes for each can message
+fmt = '1s4s4s4s'
 
 def packPayload(payload):
   return struct.pack(
     fmt,
-    payload.fsm_state.encode('ascii').ljust(8, b'\x00'),
+    payload.fsm_state,
     payload.can_brake,
     payload.can_motors,
     payload.can_led
@@ -40,11 +40,11 @@ def packPayload(payload):
 
 def unpackPayload(payload):
   payload = bytes(payload)
-  fsm_state = payload[0:8].decode('ascii').rstrip('\x00')
-  can_brake = payload[8:18]
-  can_motors = payload[18:28]
-  can_led = payload[28:38]
-  #gui_command = payload[38:].decode('ascii')
+  fsm_state = payload[0:8]
+  can_brake = payload[8:12]
+  can_motors = payload[12:16]
+  can_led = payload[16:20]
+  gui_command = payload[20:].decode('ascii')
 
   msg_received = PodMessage(
       fsm_state = fsm_state,
