@@ -17,6 +17,9 @@ from pySX127x.SX127x.board_config import BOARD
 from config import *
 from utils.formatPayload import PodMessage
 
+import datetime
+from zoneinfo import ZoneInfo
+
 import signal # Make Ctrl+C work with PyQt5 Applications
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -136,7 +139,7 @@ class MWindowWrapper(Ui_MainWindow):
     
     def handleNewMessage(self, message: PodMessage):
         self.updateCurrentState(message.fsm_state)
-        self.addMessageLabel(f"New: {message}")
+        self.addMessageLabel(message)
 
     #updates label colors if state is not equal to current_state
     def updateCurrentState(self, state):
@@ -202,8 +205,10 @@ class MWindowWrapper(Ui_MainWindow):
                 self.label_6.setStyleSheet("background-color: gray")
 
     def addMessageLabel(self, message: str):
-        label = QLabel(message)
-        self.messagesLayout.addWidget(label)
+        label = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        label.setText(f"{datetime.datetime.now(ZoneInfo("America/Edmonton")).strftime('%H:%M:%S')}: {message}")
+        label.setStyleSheet("color: black; font: 10pt Arial; background: white; padding: 4px;")
+        self.scrollLayout.addWidget(label)
 
     
         
@@ -221,19 +226,22 @@ if __name__ == "__main__":
     lora.set_rx_crc(True)
     lora.set_low_data_rate_optim(True)
 
-
     assert(lora.get_agc_auto_on() == 1)
 
     try:
-        print("START")
-        MainWindow = QMainWindow()
-        mWindowWrapper = MWindowWrapper(MainWindow, lora)
         lora.start()
-        # Connect the LoRa signal to the GUI update function
-        lora.state_updated.connect(mWindowWrapper.handleNewMessage)
-        
-        MainWindow.show()
-        sys.exit(app.exec_())
+
+        while (True):
+            if (lora.connected):
+                print("STARTING CLIENT")
+                MainWindow = QMainWindow()
+                mWindowWrapper = MWindowWrapper(MainWindow, lora)
+                # Connect the LoRa signal to the GUI update function
+                lora.state_updated.connect(mWindowWrapper.handleNewMessage)
+                
+                MainWindow.show()
+                sys.exit(app.exec_())
+                
     except KeyboardInterrupt:
         sys.stdout.flush()
         print("Exit")

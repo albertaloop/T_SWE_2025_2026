@@ -1,9 +1,10 @@
 import time
 from pySX127x.SX127x.LoRa import *
 from pySX127x.SX127x.board_config import BOARD
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+from PyQt5.QtCore import QObject, pyqtSignal
 from utils.formatPayload import unpackPayload, convertStringToByteList, PodMessage, convertByteListToString
 from config import *
+# import threading
 
 class CustomLora(LoRa, QObject):
     state_updated = pyqtSignal(PodMessage)  # the new state will be emitted here
@@ -13,27 +14,27 @@ class CustomLora(LoRa, QObject):
         QObject.__init__(self) 
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([0] * 6)
-        self.connected = False
+        self.connected = True
+        self.timedOut = False
         self.current_message = PodMessage()
 
         # Timer for connection timeout
-        self.connection_timer = QTimer()
-        self.connection_timer.setSingleShot(True)
-        self.connection_timer.timeout.connect(self.handle_connection_timeout)
+        # self.timer = threading.Timer(10.0, self.handleConnectionTimeout)
 
     def on_rx_done(self):
         BOARD.led_on()
         print("\nRxDone")
         self.clear_irq_flags(RxDone=1)
         payload = self.read_payload(nocheck=True)
-        str_payload = convertByteListToString(payload)
-        print(str_payload)
-        if (str_payload == CONNECTION_MESSAGE):
-            print("Connected to server")
-            self.connected = True
-            self.connection_timer.stop()
-        else:
-            BOARD.led_off()
+        if not (self.connected):
+            str_payload = convertByteListToString(payload)
+            print(f"String payload: {str_payload}")
+            if (str_payload == CONNECTION_MESSAGE):
+                print("Connected to server")
+                self.connected = True
+                self.timer.cancel()
+            else:
+                BOARD.led_off()
             return
 
         new_msg = unpackPayload(payload)
@@ -67,14 +68,23 @@ class CustomLora(LoRa, QObject):
         print("\non_FhssChangeChannel")
         print(self.get_irq_flags())
 
-    def start(self):          
-        print ("Checking connection")
-        self.connection_timer.start(5000)
-        self.write_payload(convertStringToByteList(CONNECTION_MESSAGE))
-        self.set_mode(MODE.TX)
-        time.sleep(0.1)
+    def start(self):
+        # self.timer.start()
+        while not (self.connected):       
+            self.write_payload(convertStringToByteList(CONNECTION_MESSAGE))
+            print ("Checking connection")
+            self.set_mode(MODE.TX)
+            time.sleep(2)
+            self.reset_ptr_rx()
+            self.set_mode(MODE.RXCONT)
+            start_time = time.time()
+            while (time.time() - start_time < 10): # Check for connection every 10 seconds
+                pass
+
         self.reset_ptr_rx()
-        self.set_mode(MODE.RXCONT)
+        self.set_mode(MODE.RXCONT) # Receiver mode
+        time.sleep(2)
     
-    def handle_connection_timeout(self):
-        print("Connection timeout: did not receive CONNECTION_MESSAGE in 5 seconds.")
+    # def handleConnectionTimeout(self):
+    #     print("Connection timeout: did not receive CONNECTION_MESSAGE within 10 seconds.")
+    #     self.timedOut = True
