@@ -11,12 +11,15 @@ class Command:
         self.receiver.current_message.gui_command = self.message
 
         # Mock
-        self.receiver.read_payload = lambda nocheck=True: packPayload(self.receiver.current_message)
-        
+        # self.receiver.read_payload = lambda nocheck=True: packPayload(self.receiver.current_message)
         print("Sending: ", self.receiver.current_message)
+        # print(list(packPayload(self.receiver.current_message)))
+        # p =[x for x in list(packPayload(self.receiver.current_message)) if x != 0]
+        # p = p + [10, 11, 30, 20, 20, 60 , 43, 231, 54, 65, 23, 87, 10, 32, 54, 56, 76, 255, 254, 0]
+        # print(p)
         self.receiver.write_payload(list(packPayload(self.receiver.current_message)))
         self.receiver.set_mode(MODE.TX)
-        sleep(0.5)
+        sleep(2)
         self.receiver.reset_ptr_rx()
         self.receiver.set_mode(MODE.RXCONT)
         with cmd_lock:
@@ -24,7 +27,7 @@ class Command:
         print("Execution complete")
         
         # Mock calling the received func
-        self.receiver.on_rx_done()
+        # self.receiver.on_rx_done()
 
 class Crawl(Command):
     def __init__(self, receiver):
