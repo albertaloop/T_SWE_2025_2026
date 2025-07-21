@@ -128,6 +128,7 @@ def lora_thread():
     lora.set_rx_crc(True)
     lora.set_low_data_rate_optim(True)
     lora.set_freq(915)
+    #lora.set_payload_length(43)
 
     # Blocking start() method loops send/receive/ACK
     try:

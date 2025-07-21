@@ -44,14 +44,14 @@ def unpackPayload(payload):
   can_brake = payload[8:18]
   can_motors = payload[18:28]
   can_led = payload[28:38]
-  gui_command = payload[38:].decode('ascii')
+  #gui_command = payload[38:].decode('ascii')
 
   msg_received = PodMessage(
       fsm_state = fsm_state,
       can_brake = can_brake,
       can_motors = can_motors,
       can_led = can_led,
-      gui_command = gui_command
+      gui_command = "test"
   )
   
   return msg_received

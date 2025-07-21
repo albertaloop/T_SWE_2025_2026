@@ -39,28 +39,30 @@ class mylora(LoRa):
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([0] * 6)
         self.var=0
+        self.connected = False
 
     def on_rx_done(self):
         BOARD.led_on()
         #print("\nRxDone")
         self.clear_irq_flags(RxDone=1)
         payload = self.read_payload(nocheck=True)
-        print ("Receive: ")
         #print(bytes(payload).decode("utf-8",'ignore')) # Receive DATA
-        print(payload)
+        print(f"Recieved: {payload}")
         str_payload = convertByteListToString(payload)
-        print(str_payload)
-        if (str_payload == CONNECTION_MESSAGE):
-            print("Connected to server")
-            print ("Send: ACK")
-            time.sleep(2) # Wait for the client be ready
-            self.write_payload(convertStringToByteList(CONNECTION_MESSAGE))
-            self.set_mode(MODE.TX)
-        else:
-            BOARD.led_off()
-            return
-        upacked_payload = unpackPayload(str_payload)
-        print(unpacked_payload)
+        print(f"String Payload: {str_payload}")
+        if not self.connected:
+            if (str_payload == CONNECTION_MESSAGE):
+                self.connected = True
+                print("Connected to server")
+                print ("Send: ACK")
+                time.sleep(2) # Wait for the client be ready
+                self.write_payload(convertStringToByteList(CONNECTION_MESSAGE))
+                self.set_mode(MODE.TX)
+            elif (not self.connected):
+                BOARD.led_off()
+                return
+        unpacked_payload = unpackPayload(payload)
+        print(f"Unpacked Payload: {unpacked_payload}")
         BOARD.led_off()
         #time.sleep(1) # Wait for the client be ready
         #self.write_payload([255, 255, 0, 0, 65, 67, 75, 0]) # Send ACK
