@@ -40,11 +40,11 @@ def packPayload(payload):
 
 def unpackPayload(payload):
   payload = bytes(payload)
-  fsm_state = payload[0:8]
-  can_brake = payload[8:12]
-  can_motors = payload[12:16]
-  can_led = payload[16:20]
-  gui_command = payload[20:].decode('ascii')
+  fsm_state = payload[0:1]
+  can_brake = payload[1:5]
+  can_motors = payload[5:9]
+  can_led = payload[9:13]
+  gui_command = payload[13:].decode('ascii')
 
   msg_received = PodMessage(
       fsm_state = fsm_state,
