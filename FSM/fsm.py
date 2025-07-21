@@ -11,13 +11,6 @@ from py_trees.common import ParallelPolicy
 
 
 
-def clear_terminal() :
-    if os.name == 'nt' :
-        _ = os.system('cls')
-    else :
-        _ = os.system('clear')
-
-
 # CANbus
 CANBUS = can.interface.Bus(interface='socketcan', channel='can0', bitrate = 250000)
 
@@ -81,22 +74,22 @@ def on_press(key):
    try:
        if key.char == 'f' and not state['fault'] :
            change_state('fault')
-           print(f"Toggle FAULT: {state['fault']}")
-       elif key.char == 'd' and not state['debug'] :
+           #print(f"Toggle FAULT: {state['fault']}")
+       elif key.char == 'd' and not state['debug'] and check_signals() :
            change_state('debug')
-           print(f"Toggle DEBUG: {state['debug']}")
-       elif key.char == 's' and not state['safe'] :
+           #print(f"Toggle DEBUG: {state['debug']}")
+       elif key.char == 's' and not state['safe'] and check_signals() :
            change_state('safe')
-           print(f"Toggle SAFE: {state['safe']}")
-       elif key.char == 'r' and not state['ready'] :
+           #print(f"Toggle SAFE: {state['safe']}")
+       elif key.char == 'r' and not state['ready'] and check_signals() :
            change_state('ready')
-           print(f"Toggle READY: {state['ready']}")
-       elif key.char == 'c' and not state['crawling'] :
+           #print(f"Toggle READY: {state['ready']}")
+       elif key.char == 'c' and not state['crawling'] and check_signals() :
            change_state('crawling')
-           print(f"Toggle CRAWLING: {state['crawling']}")
-       elif key.char == 'b' and not state['braking'] :
+           #print(f"Toggle CRAWLING: {state['crawling']}")
+       elif key.char == 'b' and not state['braking'] and check_signals() :
            change_state('braking')
-           print(f"Toggle BRAKING: {state['braking']}")
+           #print(f"Toggle BRAKING: {state['braking']}")
 
    except AttributeError:
        pass  # special keys ignored
@@ -141,11 +134,9 @@ def change_state(next_state):
 
 
 
-
 # --- Conditions ---
 class InFault(py_trees.behaviour.Behaviour):
    def update(self):
-       print("Check fault")
        return py_trees.common.Status.SUCCESS if check_fault() else py_trees.common.Status.FAILURE
 
 
@@ -153,7 +144,6 @@ class InFault(py_trees.behaviour.Behaviour):
 
 class InDebug(py_trees.behaviour.Behaviour):
    def update(self):
-       print("Check debug")
        return py_trees.common.Status.SUCCESS if check_debug() else py_trees.common.Status.FAILURE
 
 
@@ -161,7 +151,6 @@ class InDebug(py_trees.behaviour.Behaviour):
 
 class InSafeToApproach(py_trees.behaviour.Behaviour):
    def update(self):
-       print("Check safe")
        return py_trees.common.Status.SUCCESS if check_safe() else py_trees.common.Status.FAILURE
 
 
@@ -169,7 +158,6 @@ class InSafeToApproach(py_trees.behaviour.Behaviour):
 
 class InReadyToRun(py_trees.behaviour.Behaviour):
    def update(self):
-       print("Check ready")
        return py_trees.common.Status.SUCCESS if check_ready() else py_trees.common.Status.FAILURE
 
 
@@ -177,12 +165,10 @@ class InReadyToRun(py_trees.behaviour.Behaviour):
 
 class InCrawling(py_trees.behaviour.Behaviour):
    def update(self):
-       print("Check crawling")
        return py_trees.common.Status.SUCCESS if check_crawling() else py_trees.common.Status.FAILURE
    
 class InBraking(py_trees.behaviour.Behaviour):
    def update(self):
-       print("Check braking")
        return py_trees.common.Status.SUCCESS if check_braking() else py_trees.common.Status.FAILURE
 
 
@@ -206,7 +192,9 @@ class HandleFault(py_trees.behaviour.Behaviour):
 class RunDiagnostics(py_trees.behaviour.Behaviour):
    def update(self):
        print("Running diagnostics...")
-       return py_trees.common.Status.RUNNING
+       print("Debug unavailable")
+       change_state('fault')
+       return py_trees.common.Status.SUCCESS
  
 
 class SafeToApproach(py_trees.behaviour.Behaviour):
@@ -219,12 +207,14 @@ class SafeToApproach(py_trees.behaviour.Behaviour):
        self.attempt_count = self.max_attempt_count
 
    def update(self):
-       if not check_ready():
+       if not check_signals() :
+           return py_trees.common.Status.FAILURE
+       if check_safe() :
            print("State is SAFE. Running operations...")
            if self.attempt_count :  
                 self.attempt_count -= 1
                 safe = send_message(DEFAULT_MESSAGES['ENGAGE_BRAKES']) and send_message(DEFAULT_MESSAGES['STOP_MOTOR']) and send_message(DEFAULT_MESSAGES['LED_SAFE'])
-                if safe and check_signals() :
+                if safe:
                         print('Operations successful — pod is safe to approach. Will remain in SAFE state until given command or error occurs.')
                 else :
                         print('Operations unsuccessful. Changing state to FAULT...')
@@ -232,6 +222,8 @@ class SafeToApproach(py_trees.behaviour.Behaviour):
                         return py_trees.common.Status.FAILURE
            else :
                print('Max SAFE state operations have been reached. Will remain idle until given command or error occurs.')
+       else :
+           return py_trees.common.Status.SUCCESS
        return py_trees.common.Status.RUNNING
      
 
@@ -245,12 +237,18 @@ class ReadyToRun(py_trees.behaviour.Behaviour):
        self.attempt_count = self.max_attempt_count
 
    def update(self):
-       if not check_crawling():
+       if not check_signals() :
+           return py_trees.common.Status.FAILURE
+       if self.attempt_count <= -10 :
+           print("No command recieved, returning to safe.")
+           change_state('safe')
+           return py_trees.common.Status.FAILURE
+       if check_ready():
            print("State is READY. Running operations...")
            if self.attempt_count :
                 self.attempt_count -= 1
                 safe = send_message(DEFAULT_MESSAGES['DISENGAGE_BRAKES']) and send_message(DEFAULT_MESSAGES['STOP_MOTOR']) and send_message(DEFAULT_MESSAGES['LED_READY'])
-                if safe and check_signals() :
+                if safe :
                         print('Operations successful — pod is ready to run. Will remain in READY state until given command or error occurs.')
                 else :
                         print('Operations unsuccessful. Changing state to FAULT...')
@@ -258,6 +256,8 @@ class ReadyToRun(py_trees.behaviour.Behaviour):
                         return py_trees.common.Status.FAILURE
            else :
                print('Max READY state operations have been reached. Will remain idle until given command or error occurs.')
+       else :
+           return py_trees.common.Status.SUCCESS
        return py_trees.common.Status.RUNNING
 
 
@@ -272,6 +272,10 @@ class ExecuteCrawling(py_trees.behaviour.Behaviour):
        self.attempt_count = self.max_attempt_count
  
    def update(self):
+        if not check_signals() :
+            return py_trees.common.Status.FAILURE
+        if not check_crawling() :
+            return py_trees.common.Status.SUCCESS
         print("State is CRAWLING. Running operations...")
         if self.attempt_count :
             self.attempt_count -= 1
@@ -291,7 +295,9 @@ class ExecuteCrawling(py_trees.behaviour.Behaviour):
 class ExecuteBraking(py_trees.behaviour.Behaviour):
    def update(self):
        print("Executing braking behavior...")
-       return py_trees.common.Status.RUNNING
+       print("Braking state unavailable, will brake in fault.")
+       change_state('fault')
+       return py_trees.common.Status.SUCCESS
    
 
 
@@ -421,6 +427,8 @@ def read_message(msg):
     # LORA heartbeat signal??
     signal_time_elasped['LORA'] = datetime.now()
 
+    send_message(msg)
+
 
 
 def send_message(msg) :
@@ -439,26 +447,29 @@ def send_message(msg) :
         return False
 
 
-def check_signals() :
+def check_signals(logs = True) :
+    responsive = True
     for key in list(signal_time_elasped.keys()) :
         time_elasped = (datetime.now() - signal_time_elasped[key]).total_seconds()
         if time_elasped > 5 or (key == 'LORA' and time_elasped > 2) :
-            if not state['fault'] : 
-                print(f"{key} has not responded in {time_elasped} seconds!\n Entering fault state.")
+            if not state['fault'] :
+                if logs :
+                    print(f"{key} has not responded in {time_elasped} seconds!\n Entering fault state.")
                 change_state('fault')
-            else :
+            elif logs :
                 print(f"{key} has not responded in {time_elasped} seconds!\n Remaining in fault state.") 
-
+            responsive = False
+    return responsive
 
 
        
 # --- Build Behavior Tree ---
 def create_behavior_tree():
-   root = py_trees.composites.Parallel("Root", policy=py_trees.common.ParallelPolicy.SuccessOnAll())
+   root = py_trees.composites.Parallel("Root", policy=ParallelPolicy.SuccessOnAll(synchronise = False))
 
 
    # parallel monitor for running subscriber and signal checks
-   monitor = py_trees.composites.Parallel("Monitoring", policy=py_trees.common.ParallelPolicy.SuccessOnAll())
+   monitor = py_trees.composites.Parallel("Monitoring", policy=ParallelPolicy.SuccessOnAll())
 
 
    brakes_subscriber = SubscriberBehavior("brakes", "brakes", String)
@@ -468,7 +479,7 @@ def create_behavior_tree():
 
    signal_checker = CheckSignals()
    
-   monitor.add_children([brakes_subscriber, motor_subscriber, LED_subscriber, LORA_subscriber, signal_checker])
+   monitor.add_children([brakes_subscriber, motor_subscriber, LED_subscriber, LORA_subscriber])
 
 
    state_machine = py_trees.composites.Selector("State Machine", memory = False)
@@ -486,12 +497,12 @@ def create_behavior_tree():
 
 
 
-   normal_seq = py_trees.composites.Sequence("Normal Operation Sequence", memory=False)
+   normal_seq = py_trees.composites.Sequence("Normal Operation Sequence", memory=True)
 
 
 
 
-   safe_seq = py_trees.composites.Sequence("Safe Sequence", memory=False)
+   safe_seq = py_trees.composites.Sequence("Safe Sequence", memory=True)
    safe_seq.add_children([
        InSafeToApproach(name="Check safe"),
        SafeToApproach(name="Safe to approach")
@@ -500,7 +511,7 @@ def create_behavior_tree():
 
 
 
-   ready_seq = py_trees.composites.Sequence("Ready Sequence", memory=False)
+   ready_seq = py_trees.composites.Sequence("Ready Sequence", memory=True)
    ready_seq.add_children([
        InReadyToRun(name="Check ready"),
        ReadyToRun(name="Ready to run")
@@ -509,7 +520,7 @@ def create_behavior_tree():
 
 
 
-   main_seq = py_trees.composites.Sequence("Main Sequence", memory=False)
+   main_seq = py_trees.composites.Sequence("Main Sequence", memory=True)
    main_seq.add_children([
        InCrawling(name="Check Crawling"),
        ExecuteCrawling(name="Crawling", max_attempt_count=5),
@@ -558,16 +569,11 @@ if __name__ == '__main__':
     tree.setup()
     print("Tree set up. Beginning tree ticks.")
 
-    count = 0
     try:
         rate = rospy.Rate(1)
         while not rospy.is_shutdown():
             tree.tick()
             rate.sleep()
-            if count == -2 :
-                print("\033c", end = "")
-                count = 0
-            else : count += 1
            
     except KeyboardInterrupt:
         print("\nShutting down...")
