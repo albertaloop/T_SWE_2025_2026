@@ -74,7 +74,7 @@ void Set_LEDs_ByState(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-#define MAX_LED 64
+#define MAX_LED 150
 #define USE_BRIGHTNESS 0
 
 uint8_t fsm_state = 0; 	// initialize fault state
