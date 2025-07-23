@@ -156,10 +156,10 @@ int main(void)
 	  if (crawl_mode)
 	  {
 		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);  // Forward
-		  HAL_Delay(3000);
+		  HAL_Delay(1000);
 
 		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);  // Reverse
-		  HAL_Delay(3000);
+		  HAL_Delay(1000);
 	  }
 
 	  // Always check CAN messages
@@ -635,8 +635,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     else if (RxHeader.StdId == 0x310 && RxHeader.RTR == 0)
     {   // Enable crawl
         crawl_mode = 1;
-        motor_speed = 20;  // example crawl speed
-        HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0.20 * DAC_MAX);
+        motor_speed = 35;  // example crawl speed
+        HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, 0.35 * DAC_MAX);
         HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
     }
 //    else if (RxHeader.StdId >= 0x301 && RxHeader.StdId <= 0x306)
