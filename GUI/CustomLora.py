@@ -1,3 +1,5 @@
+# import sys
+# sys.path.append("/home/veerparasmehra/T_SWE_2025_2026") 
 import time
 from pySX127x.SX127x.LoRa import *
 from pySX127x.SX127x.board_config import BOARD
@@ -14,7 +16,7 @@ class CustomLora(LoRa, QObject):
         QObject.__init__(self) 
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([0] * 6)
-        self.connected = True
+        self.connected = False
         self.timedOut = False
         self.current_message = PodMessage()
 
@@ -30,9 +32,9 @@ class CustomLora(LoRa, QObject):
             str_payload = convertByteListToString(payload)
             print(f"String payload: {str_payload}")
             if (str_payload == CONNECTION_MESSAGE):
-                print("Connected to server")
+                print("Connected to server, starting client")
                 self.connected = True
-                self.timer.cancel()
+                # self.timer.cancel()
             else:
                 BOARD.led_off()
             return

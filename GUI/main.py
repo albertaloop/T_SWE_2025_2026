@@ -8,7 +8,8 @@ from AlbertaLoop_UI import Ui_MainWindow
 from Actions.Command import PrepareLaunch
 from Actions.Command import EStop
 from Actions.Command import Crawl
-from Actions.HealthCheck import HealthCheck
+from Actions.Command import SafeToApproach
+# from Actions.HealthCheck import HealthCheck
 
 import threading
 
@@ -47,7 +48,7 @@ class MWindowWrapper(Ui_MainWindow):
 
         # Connect clicked functions
         # self.launchBtn.clicked.connect(self.launchBtn_clicked)
-        # self.healthChkBtn.clicked.connect(self.healthChkBtn_clicked)
+        self.safeBtn.clicked.connect(self.safeBtn_clicked)
         self.crawlBtn.clicked.connect(self.crawlBtn_clicked)
         self.prepLaunchBtn.clicked.connect(self.prepLaunchBtn_clicked)
         self.eStopBtn.clicked.connect(self.eStopBtn_clicked)
@@ -58,56 +59,62 @@ class MWindowWrapper(Ui_MainWindow):
 
 
     # Clicked function definitions
-    def launchBtn_clicked(self):
-        print("Launch button pressed")
-        if self.command_requested == ["none"]:
-            if self.current_state == STATE_READY :
-                self.command_requested = ["launch"]
-                self.executeCommand(Launch(self.lora_module), self.command_requested)
-            else :
-                print("Not ready to launch")
-        else:
-            print("Waiting for another command: ")
-            print(self.command_requested)
-            print("\n")
+    # def launchBtn_clicked(self):
+    #     print("Launch button pressed")
+    #     if self.command_requested == ["none"]:
+    #         if self.current_state == STATE_READY :
+    #             self.command_requested = ["launch"]
+    #             self.executeCommand(Launch(self.lora_module), self.command_requested)
+    #         else :
+    #             print("Not ready to launch")
+    #     else:
+    #         print("Waiting for another command: ")
+    #         print(self.command_requested)
+    #         print("\n")
 
 
-    def healthChkBtn_clicked(self):
-        print("Health check button pressed")
-        if self.healthchk_requested == ["none"]:
-            self.healthchk_requested = ["yes"]
-            self.executeCommand(HealthCheck(self.lora_module), self.healthchk_requested)
-            print("Health check requested")
-        else :
-            print("Health check already requested")
+    # def healthChkBtn_clicked(self):
+    #     print("Health check button pressed")
+    #     if self.healthchk_requested == ["none"]:
+    #         self.healthchk_requested = ["yes"]
+    #         self.executeCommand(HealthCheck(self.lora_module), self.healthchk_requested)
+    #         print("Health check requested")
+    #     else :
+    #         print("Health check already requested")
 
     def crawlBtn_clicked(self):
         print("Crawl button pressed")
-        if self.command_requested == ["none"]:
-            if self.current_state == STATE_READY:
-                self.command_requested = ["crawl"]
-                self.executeCommand(Crawl(self.lora_module), self.command_requested)
-                print("Crawl requested")
-            else :
-                print("Not ready to crawl, pod must be idle")
-        else:
-            print("Waiting for another command: ")
-            print(self.command_requested)
-            print("\n")
+        self.executeCommand(Crawl(self.lora_module), self.command_requested)
+        print("Crawl requested")
+        # Not required for kdays
+        # if self.command_requested == ["none"]:
+        #     if self.current_state == STATE_READY:
+        #         self.command_requested = ["crawl"]
+        #         self.executeCommand(Crawl(self.lora_module), self.command_requested)
+        #         print("Crawl requested")
+        #     else :
+        #         print("Not ready to crawl, pod must be idle")
+        # else:
+        #     print("Waiting for another command: ")
+        #     print(self.command_requested)
+        #     print("\n")
 
     def prepLaunchBtn_clicked(self):
         print("Prepare Launch button pressed")
-        if self.command_requested == ["none"]:
-            if self.current_state == STATE_SAFE :
-                self.command_requested = ["prep_launch"]
-                self.executeCommand(PrepareLaunch(self.lora_module), self.command_requested)
-                print("Prepare to launch requested")
-            else :
-                print("Not ready for prepare to launch, pod must be idle")
-        else:
-            print("Waiting for another command: ")
-            print(self.command_requested)
-            print("\n")
+        self.executeCommand(PrepareLaunch(self.lora_module), self.command_requested)
+        print("Prepare to launch requested")
+        # Not required for kdays
+        # if self.command_requested == ["none"]:
+        #     if self.current_state == STATE_SAFE :
+        #         self.command_requested = ["prep_launch"]
+        #         self.executeCommand(PrepareLaunch(self.lora_module), self.command_requested)
+        #         print("Prepare to launch requested")
+        #     else :
+        #         print("Not ready for prepare to launch, pod must be idle")
+        # else:
+        #     print("Waiting for another command: ")
+        #     print(self.command_requested)
+        #     print("\n")
 
     def eStopBtn_clicked(self):
         print("Estop button pressed")
@@ -122,6 +129,10 @@ class MWindowWrapper(Ui_MainWindow):
             self.cmd_lock.release()
             print("EStop already sending")
 
+    def safeBtn_clicked(self):
+        print("Safe to approach button pressed")
+        self.executeCommand(SafeToApproach(self.lora_module), self.command_requested)
+        print("Safe to approach requested")
 
     # Command Pattern definitions
     def executeCommand(self, command, cmd_state):

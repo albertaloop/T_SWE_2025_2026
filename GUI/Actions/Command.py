@@ -13,10 +13,6 @@ class Command:
         # Mock
         # self.receiver.read_payload = lambda nocheck=True: packPayload(self.receiver.current_message)
         print("Sending: ", self.receiver.current_message)
-        # print(list(packPayload(self.receiver.current_message)))
-        # p =[x for x in list(packPayload(self.receiver.current_message)) if x != 0]
-        # p = p + [10, 11, 30, 20, 20, 60 , 43, 231, 54, 65, 23, 87, 10, 32, 54, 56, 76, 255, 254, 0]
-        # print(p)
         self.receiver.write_payload(list(packPayload(self.receiver.current_message)))
         self.receiver.set_mode(MODE.TX)
         sleep(2)
@@ -50,3 +46,7 @@ class PrepareLaunch(Command):
         self.receiver = receiver
         self.message = STATE_READY
 
+class SafeToApproach(Command):
+    def __init__(self, receiver):
+        self.receiver = receiver
+        self.message = STATE_SAFE
