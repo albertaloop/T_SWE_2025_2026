@@ -26,6 +26,7 @@ MOTOR_START_30_CMD  = 0x303  # start motors (10%)
 MOTOR_START_50_CMD  = 0x304  # start motors (50%)
 MOTOR_START_70_CMD  = 0x305  # start motors (70%)
 MOTOR_START_100_CMD = 0x306  # Full power command  
+KDAYS_CRAWL_CMD = 0x310
 
 # Timeouts
 HEARTBEAT_TIMEOUT = 10         # Seconds before triggering a fault on missing heartbeat :contentReference[oaicite:11]{index=11}  
@@ -78,4 +79,27 @@ STATE_COLORS = {               # Used by LED controller node
     STATE_CRAWLING: 'YELLOW',  
     STATE_BRAKING:  'ORANGE',  
     STATE_DEBUG:    'PURPLE',  
+}
+
+# Message to test connection between client and server on startup
+CONNECTION_MESSAGE = "Albertaloop"
+
+# Temporary for k-days need to organize later
+ENGAGE_BRAKES   = 0x201  # Brake controller: engage
+DISENGAGE_BRAKES = 0x202  # Brake controller: disengage
+
+STOP_MOTORS     = 0x301  # Motor controller: stop (0 %)
+CRAWL_MOTORS    = 0x310  # Motor controller: crawl 
+
+LED_FAULT       = 0x401  # LED controller: fault      (red)
+LED_SAFE        = 0x402  # LED controller: safe       (green)
+LED_READY       = 0x403  # LED controller: ready      (blue)
+LED_ALOOP       = 0x405 # LED controller: aloop colors
+
+STATE_FRAMES = {
+    #  textual cmd            list of arbitration IDs in desired send order
+    STATE_FAULT:             [ENGAGE_BRAKES, LED_FAULT,  STOP_MOTORS],
+    STATE_SAFE:  [ENGAGE_BRAKES, LED_SAFE,   STOP_MOTORS],
+    STATE_READY:   [DISENGAGE_BRAKES, LED_READY, STOP_MOTORS],
+    STATE_CRAWLING:             [DISENGAGE_BRAKES, LED_ALOOP, CRAWL_MOTORS],
 }
