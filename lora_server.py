@@ -27,6 +27,7 @@ from SX127x.LoRa import *
 from SX127x.board_config import BOARD
 from utils.formatPayload import unpackPayload, convertStringToByteList, PodMessage, convertByteListToString
 from config import *
+from min_fsm import *
 
 BOARD.setup()
 BOARD.reset()
@@ -48,9 +49,9 @@ class mylora(LoRa):
         payload = self.read_payload(nocheck=True)
         #print(bytes(payload).decode("utf-8",'ignore')) # Receive DATA
         print(f"Recieved: {payload}")
-        str_payload = convertByteListToString(payload)
-        print(f"String Payload: {str_payload}")
         if not self.connected:
+            str_payload = convertByteListToString(payload)
+            print(f"String Payload: {str_payload}")
             if (str_payload == CONNECTION_MESSAGE):
                 self.connected = True
                 print("Connected to server")
@@ -58,19 +59,17 @@ class mylora(LoRa):
                 time.sleep(2) # Wait for the client be ready
                 self.write_payload(convertStringToByteList(CONNECTION_MESSAGE))
                 self.set_mode(MODE.TX)
+                time.sleep(2)
+                self.reset_ptr_rx()
+                self.set_mode(MODE.RXCONT)
             elif (not self.connected):
                 BOARD.led_off()
-                return
+            return
+
         unpacked_payload = unpackPayload(payload)
         print(f"Unpacked Payload: {unpacked_payload}")
+        sendCanMessage(unpacked_payload)
         BOARD.led_off()
-        #time.sleep(1) # Wait for the client be ready
-        #self.write_payload([255, 255, 0, 0, 65, 67, 75, 0]) # Send ACK
-        #self.set_mode(MODE.TX)
-        #self.var=1
-        time.sleep(2)
-        self.reset_ptr_rx()
-        self.set_mode(MODE.RXCONT)
 
     def on_tx_done(self):
         print("\nTxDone")
@@ -101,7 +100,7 @@ class mylora(LoRa):
             self.reset_ptr_rx()
             self.set_mode(MODE.RXCONT) # Receiver mode
             while True:
-                pass;
+                pass
 
     '''
     def start(self):

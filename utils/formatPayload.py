@@ -51,7 +51,7 @@ def unpackPayload(payload):
       can_brake = can_brake,
       can_motors = can_motors,
       can_led = can_led,
-      gui_command = "test"
+      gui_command = gui_command
   )
   
   return msg_received
