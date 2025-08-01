@@ -4,8 +4,17 @@ This directory contains embedded firmware for all subsystem nodes of the Alberta
 
 ---
 
-## 📹 Test Videos
+## Board renders
+| Description | Image |
+|-------------|-------|
+|LED controller|![alt text](readme_assets/led_controller.jpeg)|
+|Brakes controller|![alt text](readme_assets/brakes_controller.png)|
+|Motor driver|![alt text](readme_assets/motor_driver.png)|
+|CAN splitter + Main Control Unit/Controller|![alt text](readme_assets/cansplitter+pi_breakout.jpeg)|
+|All assembled|![alt text](readme_assets/all_boards.jpeg)|
 
+## 📹 Test Videos
+All videos are in /readme_assets
 | Description | Video |
 |-------------|-------|
 | CAN Communication between 2 Nucleo Nodes | <video src="readme_assets/CAN_2_node_nucleo_test.mp4" controls width="400"/> |
